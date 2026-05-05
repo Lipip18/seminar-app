@@ -1,0 +1,150 @@
+import { createContext, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import authService from '../services/authService';
+
+export const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [loading, setLoading] = useState(true);
+
+  // Computed values
+  const isAuthenticated = !!user;
+  const role = user?.role || null;
+
+  // 🔄 Load user on app start
+  useEffect(() => {
+    const fetchUser = async () => {
+  if (!token) {
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const res = await authService.getMe();
+
+    console.log("GET ME RESPONSE:", res);
+
+    // ✅ FIX: correct nesting
+    const userData = res.data?.data;
+
+    if (!userData) {
+      throw new Error("User data not found");
+    }
+
+    const fixedUser = {
+      ...userData,
+      role: userData.role?.toLowerCase(), // ✅ SAFE
+    };
+
+    console.log("FINAL USER:", fixedUser);
+
+    setUser(fixedUser);
+    localStorage.setItem("user", JSON.stringify(fixedUser));
+
+  } catch (err) {
+    console.error("Auth check failed", err);
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken(null);
+    setUser(null);
+
+  } finally {
+    setLoading(false);
+  }
+};
+
+    fetchUser();
+  }, [token]);
+
+  // 🔐 LOGIN
+const login = async (email, password, loginRole) => {
+  try {
+    const data = await authService.login(email, password, loginRole);
+
+    const fixedUser = {
+      ...data.user,
+      role: data.user.role.toLowerCase(),
+    };
+
+    // ✅ Save everything FIRST
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(fixedUser));
+
+    // ✅ Update state
+    setToken(data.token);
+    setUser(fixedUser);
+
+    console.log("LOGIN SAVED USER:", fixedUser); // 🔍 DEBUG
+
+    toast.success("Logged in successfully!");
+
+    // 🔥 RETURN ONLY USER (IMPORTANT FIX)
+    return fixedUser;
+
+  } catch (err) {
+    const msg = err.response?.data?.message || "Login failed";
+    toast.error(msg);
+    throw err;
+  }
+};
+  // 📝 REGISTER
+  const register = async (userData) => {
+  try {
+    const data = await authService.register(userData);
+
+    const fixedUser = {
+      ...data.user,
+      role: data.user.role.toLowerCase(),
+    };
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(fixedUser));
+
+    setToken(data.token);
+    setUser(fixedUser);
+
+    toast.success("Registered successfully!");
+
+    return fixedUser; // ✅ SAME FIX
+
+  } catch (err) {
+    const msg = err.response?.data?.message || "Registration failed";
+    toast.error(msg);
+    throw err;
+  }
+};
+  // 🚪 LOGOUT
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user'); // ✅ IMPORTANT
+      setToken(null);
+      setUser(null);
+      toast.info('Logged out');
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated,
+        role,
+        loading,
+        login,
+        register,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
