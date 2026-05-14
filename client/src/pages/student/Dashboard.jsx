@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { Building, Calendar, Clock } from 'lucide-react';
+import { useContext, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { AuthContext } from '../../context/AuthContext';
 import bookingService from '../../services/bookingService';
 import hallService from '../../services/hallService';
-import { Calendar, Building, Clock } from 'lucide-react';
-import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
@@ -51,8 +51,6 @@ export default function Dashboard() {
              <h2 className="text-2xl font-bold text-indigo-900 mb-2">Welcome to the Seminar Portal</h2>
              <p className="text-indigo-700/80 mb-6 text-sm">View upcoming events, seminars, and check hall schedules to stay on top of campus activities.</p>
          </div>
-         {/* Decorative circle */}
-         <div className="absolute top-0 right-0 w-64 h-64 bg-white/40 rounded-full blur-3xl -mx-20 -my-20 pointer-events-none"></div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

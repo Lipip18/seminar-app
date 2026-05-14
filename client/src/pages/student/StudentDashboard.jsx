@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { AuthContext } from '../../context/AuthContext';
-import { Calendar, Building, Clock } from 'lucide-react';
+import { Building, Calendar, Clock } from 'lucide-react';
+import { useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function StudentDashboard() {
   const { api, user } = useContext(AuthContext);
@@ -50,7 +50,7 @@ export default function StudentDashboard() {
              <p className="text-muted-foreground mb-6 text-sm">View upcoming events, seminars, and check hall schedules to stay on top of campus activities.</p>
          </div>
       </div>
-
+      
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {[

@@ -14,7 +14,7 @@ const router = express.Router({ mergeParams: true });
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
-router.use(authorize('Admin'));
+router.use(authorize('admin'));
 
 router
   .route('/')

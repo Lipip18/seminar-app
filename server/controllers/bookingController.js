@@ -1,56 +1,92 @@
-const Booking = require('../models/Booking');
-const Hall = require('../models/Hall');
-const User = require('../models/User');
+const Booking = require("../models/Booking");
+const Hall = require("../models/Hall");
 
-// @desc    Get all bookings
-// @route   GET /api/bookings
-// @access  Private
-exports.getBookings = async (req, res, next) => {
+// ==============================
+// GET ALL BOOKINGS
+// ==============================
+exports.getBookings = async (req, res) => {
   try {
-    let query;
+    const role = req.user?.role?.toLowerCase();
 
-    // Admin sees all, Faculty sees their own, Students see only approved bookings?
-    // Wait, the prompt says student schedule page: "View all approved bookings".
-    if (req.user.role === 'Admin') {
-      query = Booking.find().populate('hallId').populate('bookedBy', 'name email');
-    } else if (req.user.role === 'Faculty') {
-       query = Booking.find({ bookedBy: req.user.id }).populate('hallId');
-    } else {
-        // Students see all approved bookings to know the schedule
-        query = Booking.find({ status: 'Approved' }).populate('hallId');
+    if (!role) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
     }
 
-    const bookings = await query;
+    let bookings;
+
+    // ADMIN -> ALL BOOKINGS
+    if (role === "admin") {
+      bookings = await Booking.find()
+        .populate("hallId", "name")
+        .populate("bookedBy", "name email");
+    }
+
+    // FACULTY -> ONLY OWN BOOKINGS
+    else if (role === "faculty") {
+      bookings = await Booking.find({
+        bookedBy: req.user._id,
+      })
+        .populate("hallId", "name")
+        .populate("bookedBy", "name");
+    }
+
+    // STUDENT -> ONLY APPROVED BOOKINGS
+    else {
+      bookings = await Booking.find({
+        status: "Approved",
+      })
+        .populate("hallId", "name")
+        .populate("bookedBy", "name");
+    }
+
+    const formatted = bookings.map((b) => ({
+      _id: b._id,
+      date: b.date,
+      startTime: b.startTime,
+      endTime: b.endTime,
+      status: b.status,
+
+      hall: {
+        name: b.hallId?.name || "Hall",
+      },
+
+      user: {
+        name: b.bookedBy?.name || "User",
+      },
+    }));
 
     res.status(200).json({
       success: true,
-      count: bookings.length,
-      data: bookings,
+      count: formatted.length,
+      data: formatted,
     });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error("GET BOOKINGS ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
-// @desc    Get single booking
-// @route   GET /api/bookings/:id
-// @access  Private
-exports.getBooking = async (req, res, next) => {
+// ==============================
+// GET SINGLE BOOKING
+// ==============================
+exports.getBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
-      .populate('hallId')
-      .populate('bookedBy', 'name email');
+      .populate("hallId", "name")
+      .populate("bookedBy", "name email");
 
     if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
-    }
-
-    // Make sure user owns booking or is admin/student viewing approved
-    if (
-      booking.bookedBy._id.toString() !== req.user.id &&
-      req.user.role === 'Faculty'
-    ) {
-      return res.status(403).json({ success: false, message: 'Not authorized to view this booking' });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
     }
 
     res.status(200).json({
@@ -58,103 +94,227 @@ exports.getBooking = async (req, res, next) => {
       data: booking,
     });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error("GET BOOKING ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
-// @desc    Add booking
-// @route   POST /api/bookings
-// @access  Private (Faculty/Admin)
-exports.addBooking = async (req, res, next) => {
+// ==============================
+// ADD BOOKING
+// ==============================
+exports.addBooking = async (req, res) => {
   try {
-    req.body.bookedBy = req.user.id;
-    req.body.role = req.user.role;
+    console.log("REQ.USER =>", req.user);
+    console.log("REQ.BODY =>", req.body);
 
-    if (req.user.role === 'Student') {
-        return res.status(403).json({ success: false, message: 'Students cannot book halls' });
+    // ==============================
+    // CHECK USER
+    // ==============================
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
     }
 
-    const hall = await Hall.findById(req.body.hallId);
+    const role = req.user.role?.toLowerCase();
+
+    if (!role) {
+      return res.status(401).json({
+        success: false,
+        message: "User role missing",
+      });
+    }
+
+    // ==============================
+    // STUDENT NOT ALLOWED
+    // ==============================
+    if (role === "student") {
+      return res.status(403).json({
+        success: false,
+        message: "Students are not allowed to book halls",
+      });
+    }
+
+    // ==============================
+    // VALIDATE REQUIRED FIELDS
+    // ==============================
+    const {
+      hallId,
+      date,
+      startTime,
+      endTime,
+      purpose,
+    } = req.body;
+
+    if (
+      !hallId ||
+      !date ||
+      !startTime ||
+      !endTime ||
+      !purpose
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    // ==============================
+    // CHECK HALL EXISTS
+    // ==============================
+    const hall = await Hall.findById(hallId);
 
     if (!hall) {
-      return res.status(404).json({ success: false, message: 'Hall not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Hall not found",
+      });
     }
 
-    if (!hall.isActive) {
-      return res.status(400).json({ success: false, message: 'Hall is currently unavailable for booking' });
+    // ==============================
+    // CHECK HALL ACTIVE
+    // ==============================
+    if (hall.isActive === false) {
+      return res.status(400).json({
+        success: false,
+        message: "Hall is disabled by admin",
+      });
     }
 
-    // Real-time availability check
-    // Check if there's any approved or pending booking that overlaps
+    // ==============================
+    // CHECK SLOT OVERLAP
+    // ==============================
     const existingBookings = await Booking.find({
-        hallId: req.body.hallId,
-        date: req.body.date,
-        status: { $in: ['Approved', 'Pending'] }
+      hallId,
+      date,
+      status: {
+        $in: ["Pending", "Approved"],
+      },
     });
 
-    const isOverlapping = existingBookings.some(booking => {
-        // String comparison for HH:mm works correctly since it's 24h format
-        return (req.body.startTime < booking.endTime && req.body.endTime > booking.startTime);
+    const isOverlap = existingBookings.some((booking) => {
+      return (
+        startTime < booking.endTime &&
+        endTime > booking.startTime
+      );
     });
 
-    if (isOverlapping) {
-         return res.status(400).json({ success: false, message: 'Hall is already booked for this time slot' });
+    if (isOverlap) {
+      return res.status(400).json({
+        success: false,
+        message: "Hall already booked for this slot",
+      });
     }
 
-    const booking = await Booking.create(req.body);
+    // ==============================
+    // CREATE BOOKING
+    // ==============================
+    const booking = await Booking.create({
+      hallId,
+      bookedBy: req.user._id,
+      role: role,
+      date,
+      startTime,
+      endTime,
+      purpose,
+      status: "Pending",
+    });
+
+    console.log("BOOKING CREATED =>", booking);
 
     res.status(201).json({
       success: true,
       data: booking,
     });
+
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error("ADD BOOKING ERROR =>", err);
+
+    if (err.errors) {
+      console.log("MONGOOSE VALIDATION =>", err.errors);
+    }
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
-// @desc    Update booking status
-// @route   PUT /api/bookings/:id
-// @access  Private/Admin
-exports.updateBooking = async (req, res, next) => {
+// ==============================
+// UPDATE BOOKING
+// ==============================
+exports.updateBooking = async (req, res) => {
   try {
-    let booking = await Booking.findById(req.params.id);
+    const role = req.user?.role?.toLowerCase();
 
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can update bookings",
+      });
     }
 
-    // Only admin can update status or note
-    booking = await Booking.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
 
     res.status(200).json({
       success: true,
       data: booking,
     });
   } catch (err) {
-     res.status(400).json({ success: false, message: err.message });
+    console.error("UPDATE BOOKING ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
-// @desc    Delete/Cancel booking
-// @route   DELETE /api/bookings/:id
-// @access  Private
-exports.deleteBooking = async (req, res, next) => {
+// ==============================
+// DELETE BOOKING
+// ==============================
+exports.deleteBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
     }
 
-    // Make sure user owns booking or is admin
+    const role = req.user?.role?.toLowerCase();
+
     if (
-      booking.bookedBy.toString() !== req.user.id &&
-      req.user.role !== 'Admin'
+      booking.bookedBy.toString() !==
+        req.user._id.toString() &&
+      role !== "admin"
     ) {
-      return res.status(403).json({ success: false, message: 'Not authorized to delete this booking' });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
     }
 
     await Booking.findByIdAndDelete(req.params.id);
@@ -164,6 +324,11 @@ exports.deleteBooking = async (req, res, next) => {
       data: {},
     });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error("DELETE BOOKING ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

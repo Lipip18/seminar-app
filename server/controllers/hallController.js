@@ -1,106 +1,57 @@
-const Hall = require('../models/Hall');
+const Hall = require("../models/Hall");
 
-// @desc    Get all halls
-// @route   GET /api/halls
-// @access  Public
+// ==============================
+// GET ALL HALLS
+// ==============================
 exports.getHalls = async (req, res) => {
   try {
-    let query;
+    const halls = await Hall.find().sort("-createdAt");
 
-    // Copy req.query
-    const reqQuery = { ...req.query };
+    // Format data for frontend
+    const formattedHalls = halls.map((hall) => ({
+      _id: hall._id,
+      name: hall.name,
+      description: hall.description || "",
+      capacity: hall.capacity || 0,
 
-    // Fields to exclude
-    const removeFields = ['select', 'sort', 'page', 'limit', 'search'];
-    removeFields.forEach((param) => delete reqQuery[param]);
+      // frontend compatibility
+      isActive:
+        hall.isActive !== undefined
+          ? hall.isActive
+          : hall.status === "Available",
 
-    // Create query string
-    let queryStr = JSON.stringify(reqQuery);
+      status: hall.status,
 
-    // Create operators ($gt, $gte, etc)
-    queryStr = queryStr.replace(
-      /\b(gt|gte|lt|lte|in)\b/g,
-      (match) => `$${match}`
-    );
+      location: {
+        building:
+          hall.location?.building ||
+          hall.building ||
+          "Main Block",
+      },
 
-    let parsedQuery = JSON.parse(queryStr);
+      facilities: hall.facilities || [],
 
-    // 🔍 Search by name
-    if (req.query.search) {
-      parsedQuery.name = {
-        $regex: req.query.search,
-        $options: 'i',
-      };
-    }
-
-    // Finding resource
-    query = Hall.find(parsedQuery);
-
-    // Select Fields
-    if (req.query.select) {
-      const fields = req.query.select.split(',').join(' ');
-      query = query.select(fields);
-    }
-
-    // Sort
-    if (req.query.sort) {
-      const sortBy = req.query.sort.split(',').join(' ');
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort('-createdAt');
-    }
-
-    // Pagination
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const total = await Hall.countDocuments(parsedQuery);
-
-    query = query.skip(startIndex).limit(limit);
-
-    // Execute query
-    const halls = await query;
-
-    // Pagination result
-    const pagination = {
-      total,
-      page,
-      pages: Math.ceil(total / limit),
-    };
-
-    if (endIndex < total) {
-      pagination.next = {
-        page: page + 1,
-        limit,
-      };
-    }
-
-    if (startIndex > 0) {
-      pagination.prev = {
-        page: page - 1,
-        limit,
-      };
-    }
+      createdAt: hall.createdAt,
+    }));
 
     res.status(200).json({
       success: true,
-      count: halls.length,
-      pagination,
-      data: halls,
+      count: formattedHalls.length,
+      data: formattedHalls,
     });
   } catch (err) {
-    console.error(err);
+    console.error("GET HALLS ERROR:", err);
+
     res.status(500).json({
       success: false,
-      message: 'Server Error',
+      message: err.message,
     });
   }
 };
 
-// @desc    Get single hall
-// @route   GET /api/halls/:id
-// @access  Public
+// ==============================
+// GET SINGLE HALL
+// ==============================
 exports.getHall = async (req, res) => {
   try {
     const hall = await Hall.findById(req.params.id);
@@ -108,7 +59,7 @@ exports.getHall = async (req, res) => {
     if (!hall) {
       return res.status(404).json({
         success: false,
-        message: 'Hall not found',
+        message: "Hall not found",
       });
     }
 
@@ -117,17 +68,18 @@ exports.getHall = async (req, res) => {
       data: hall,
     });
   } catch (err) {
-    console.error(err);
+    console.error("GET HALL ERROR:", err);
+
     res.status(500).json({
       success: false,
-      message: 'Server Error',
+      message: err.message,
     });
   }
 };
 
-// @desc    Create new hall
-// @route   POST /api/halls
-// @access  Private/Admin
+// ==============================
+// CREATE HALL
+// ==============================
 exports.createHall = async (req, res) => {
   try {
     const hall = await Hall.create(req.body);
@@ -137,24 +89,25 @@ exports.createHall = async (req, res) => {
       data: hall,
     });
   } catch (err) {
+    console.error("CREATE HALL ERROR:", err);
+
     if (err.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'Hall already exists',
+        message: "Hall already exists",
       });
     }
 
-    console.error(err);
     res.status(500).json({
       success: false,
-      message: 'Server Error',
+      message: err.message,
     });
   }
 };
 
-// @desc    Update hall
-// @route   PUT /api/halls/:id
-// @access  Private/Admin
+// ==============================
+// UPDATE HALL
+// ==============================
 exports.updateHall = async (req, res) => {
   try {
     let hall = await Hall.findById(req.params.id);
@@ -162,31 +115,36 @@ exports.updateHall = async (req, res) => {
     if (!hall) {
       return res.status(404).json({
         success: false,
-        message: 'Hall not found',
+        message: "Hall not found",
       });
     }
 
-    hall = await Hall.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    hall = await Hall.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     res.status(200).json({
       success: true,
       data: hall,
     });
   } catch (err) {
-    console.error(err);
+    console.error("UPDATE HALL ERROR:", err);
+
     res.status(500).json({
       success: false,
-      message: 'Server Error',
+      message: err.message,
     });
   }
 };
 
-// @desc    Delete hall
-// @route   DELETE /api/halls/:id
-// @access  Private/Admin
+// ==============================
+// DELETE HALL
+// ==============================
 exports.deleteHall = async (req, res) => {
   try {
     const hall = await Hall.findById(req.params.id);
@@ -194,7 +152,7 @@ exports.deleteHall = async (req, res) => {
     if (!hall) {
       return res.status(404).json({
         success: false,
-        message: 'Hall not found',
+        message: "Hall not found",
       });
     }
 
@@ -205,17 +163,18 @@ exports.deleteHall = async (req, res) => {
       data: {},
     });
   } catch (err) {
-    console.error(err);
+    console.error("DELETE HALL ERROR:", err);
+
     res.status(500).json({
       success: false,
-      message: 'Server Error',
+      message: err.message,
     });
   }
 };
 
-// @desc    Toggle hall status
-// @route   PATCH /api/halls/:id/status
-// @access  Private/Admin
+// ==============================
+// TOGGLE HALL STATUS
+// ==============================
 exports.toggleHallStatus = async (req, res) => {
   try {
     const hall = await Hall.findById(req.params.id);
@@ -223,12 +182,16 @@ exports.toggleHallStatus = async (req, res) => {
     if (!hall) {
       return res.status(404).json({
         success: false,
-        message: 'Hall not found',
+        message: "Hall not found",
       });
     }
 
-    hall.status =
-      hall.status === 'Available' ? 'Unavailable' : 'Available';
+    // Toggle both fields
+    hall.isActive = !hall.isActive;
+
+    hall.status = hall.isActive
+      ? "Available"
+      : "Unavailable";
 
     await hall.save();
 
@@ -237,38 +200,42 @@ exports.toggleHallStatus = async (req, res) => {
       data: hall,
     });
   } catch (err) {
-    console.error(err);
+    console.error("TOGGLE STATUS ERROR:", err);
+
     res.status(500).json({
       success: false,
-      message: 'Server Error',
+      message: err.message,
     });
   }
 };
 
-// @desc    Get bookings for a hall
-// @route   GET /api/halls/:id/bookings
-// @access  Private
+// ==============================
+// GET HALL BOOKINGS
+// ==============================
 exports.getHallBookings = async (req, res) => {
   try {
-    const hall = await Hall.findById(req.params.id).populate('bookings');
+    const hall = await Hall.findById(
+      req.params.id
+    ).populate("bookings");
 
     if (!hall) {
       return res.status(404).json({
         success: false,
-        message: 'Hall not found',
+        message: "Hall not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      count: hall.bookings.length,
-      data: hall.bookings,
+      count: hall.bookings?.length || 0,
+      data: hall.bookings || [],
     });
   } catch (err) {
-    console.error(err);
+    console.error("GET HALL BOOKINGS ERROR:", err);
+
     res.status(500).json({
       success: false,
-      message: 'Server Error',
+      message: err.message,
     });
   }
 };

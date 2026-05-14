@@ -1,27 +1,33 @@
-const express = require('express');
+const express = require("express");
+
 const {
   getBookings,
-  getBooking,
   addBooking,
   updateBooking,
   deleteBooking,
-} = require('../controllers/bookingController');
+} = require("../controllers/bookingController");
 
 const router = express.Router();
 
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { protect, authorize } = require("../middleware/authMiddleware");
 
+// Protect all routes
 router.use(protect);
 
-router
-  .route('/')
-  .get(getBookings)
-  .post(authorize('Faculty', 'Admin'), addBooking); // Only faculty & admin can book
+// =======================
+// ROUTES
+// =======================
 
+// GET all + POST new booking
 router
-  .route('/:id')
-  .get(getBooking)
-  .put(authorize('Admin'), updateBooking) // Only admin updates status
-  .delete(authorize('Faculty', 'Admin'), deleteBooking); // Faculty can cancel own, admin can cancel any
+  .route("/")
+  .get(getBookings)
+  .post(authorize("faculty", "admin"), addBooking);
+
+// UPDATE + DELETE booking
+router
+  .route("/:id")
+  .put(authorize("admin"), updateBooking)
+  .delete(authorize("faculty", "admin"), deleteBooking);
 
 module.exports = router;

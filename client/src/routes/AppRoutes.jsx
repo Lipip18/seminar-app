@@ -30,9 +30,9 @@ import FacultyProfile from '../pages/faculty/Profile';
 import FacultyViewHalls from '../pages/faculty/ViewHalls';
 
 // Student Pages
+import StudentSchedule from '../pages/student/Calendar';
 import StudentDashboard from '../pages/student/Dashboard';
 import StudentProfile from '../pages/student/Profile';
-import StudentSchedule from '../pages/student/Schedule';
 import StudentViewHalls from '../pages/student/ViewHalls';
 
 export default function AppRoutes() {

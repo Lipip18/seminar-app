@@ -17,17 +17,17 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 router
   .route('/')
   .get(getHalls)
-  .post(protect, authorize('Admin'), createHall);
+  .post(protect, authorize('admin'), createHall);
 
 // Single hall routes
 router
   .route('/:id')
   .get(getHall)
-  .put(protect, authorize('Admin'), updateHall)
-  .delete(protect, authorize('Admin'), deleteHall);
+  .put(protect, authorize('admin'), updateHall)
+  .delete(protect, authorize('admin'), deleteHall);
 
 // Extra features
-router.patch('/:id/status', protect, authorize('Admin'), toggleHallStatus);
+router.patch('/:id/status', protect, authorize('admin'), toggleHallStatus);
 router.get('/:id/bookings', protect, getHallBookings);
 
 module.exports = router;

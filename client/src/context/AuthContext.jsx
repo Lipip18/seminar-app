@@ -1,133 +1,274 @@
-import { createContext, useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import authService from '../services/authService';
+import {
+  createContext,
+  useEffect,
+  useState,
+} from "react";
 
-export const AuthContext = createContext();
+import axios from "axios";
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
-  const [loading, setLoading] = useState(true);
+import { toast } from "sonner";
 
-  // Computed values
-  const isAuthenticated = !!user;
-  const role = user?.role || null;
+import authService from "../services/authService";
 
-  // 🔄 Load user on app start
-  useEffect(() => {
-    const fetchUser = async () => {
-  if (!token) {
-    setLoading(false);
-    return;
-  }
+export const AuthContext =
+  createContext();
 
-  try {
-    const res = await authService.getMe();
+export const AuthProvider = ({
+  children,
+}) => {
+  const [user, setUser] =
+    useState(null);
 
-    console.log("GET ME RESPONSE:", res);
+  const [token, setToken] =
+    useState(
+      localStorage.getItem(
+        "token"
+      ) || null
+    );
 
-    // ✅ FIX: correct nesting
-    const userData = res.data?.data;
+  const [loading, setLoading] =
+    useState(true);
 
-    if (!userData) {
-      throw new Error("User data not found");
+  /* ───────────────── API INSTANCE ───────────────── */
+
+  const api = axios.create({
+  baseURL:
+    "http://localhost:5000/api",
+
+  withCredentials: true,
+
+  headers: {
+    "Content-Type":
+      "application/json",
+  },
+});
+
+  // Attach token automatically
+
+  api.interceptors.request.use(
+    (config) => {
+      const savedToken =
+        localStorage.getItem(
+          "token"
+        );
+
+      if (savedToken) {
+
+  console.log("TOKEN SENT =>", savedToken);
+
+  config.headers.Authorization = `Bearer ${savedToken}`;
+}
+
+      return config;
     }
+  );
 
-    const fixedUser = {
-      ...userData,
-      role: userData.role?.toLowerCase(), // ✅ SAFE
-    };
+  /* ───────────────── COMPUTED VALUES ───────────────── */
 
-    console.log("FINAL USER:", fixedUser);
+  const isAuthenticated = !!user;
 
-    setUser(fixedUser);
-    localStorage.setItem("user", JSON.stringify(fixedUser));
+  const role =
+    user?.role || null;
 
-  } catch (err) {
-    console.error("Auth check failed", err);
+  /* ───────────────── LOAD USER ───────────────── */
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
-    setUser(null);
+  useEffect(() => {
+    const fetchUser =
+      async () => {
+        if (!token) {
+          setLoading(false);
+          return;
+        }
 
-  } finally {
-    setLoading(false);
-  }
-};
+        try {
+          const res =
+            await authService.getMe();
+
+          console.log(
+            "GET ME RESPONSE:",
+            res
+          );
+
+          const userData =
+            res.data?.data;
+
+          if (!userData) {
+            throw new Error(
+              "User data not found"
+            );
+          }
+
+          const fixedUser = {
+            ...userData,
+            role:
+              userData.role?.toLowerCase(),
+          };
+
+          console.log(
+            "FINAL USER:",
+            fixedUser
+          );
+
+          setUser(fixedUser);
+
+          localStorage.setItem(
+            "user",
+            JSON.stringify(
+              fixedUser
+            )
+          );
+        } catch (err) {
+          console.error(
+            "Auth check failed",
+            err
+          );
+
+          localStorage.removeItem(
+            "token"
+          );
+
+          localStorage.removeItem(
+            "user"
+          );
+
+          setToken(null);
+
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      };
 
     fetchUser();
   }, [token]);
 
-  // 🔐 LOGIN
-const login = async (email, password, loginRole) => {
-  try {
-    const data = await authService.login(email, password, loginRole);
+  /* ───────────────── LOGIN ───────────────── */
 
-    const fixedUser = {
-      ...data.user,
-      role: data.user.role.toLowerCase(),
-    };
+  const login = async (
+    email,
+    password,
+    loginRole
+  ) => {
+    try {
+      const data =
+        await authService.login(
+          email,
+          password,
+          loginRole
+        );
 
-    // ✅ Save everything FIRST
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(fixedUser));
+      const fixedUser = {
+        ...data.user,
+        role:
+          data.user.role.toLowerCase(),
+      };
 
-    // ✅ Update state
-    setToken(data.token);
-    setUser(fixedUser);
+      localStorage.setItem(
+        "token",
+        data.token
+      );
 
-    console.log("LOGIN SAVED USER:", fixedUser); // 🔍 DEBUG
+      localStorage.setItem(
+        "user",
+        JSON.stringify(
+          fixedUser
+        )
+      );
 
-    toast.success("Logged in successfully!");
+      setToken(data.token);
 
-    // 🔥 RETURN ONLY USER (IMPORTANT FIX)
-    return fixedUser;
+      setUser(fixedUser);
 
-  } catch (err) {
-    const msg = err.response?.data?.message || "Login failed";
-    toast.error(msg);
-    throw err;
-  }
-};
-  // 📝 REGISTER
-  const register = async (userData) => {
-  try {
-    const data = await authService.register(userData);
+      toast.success(
+        "Logged in successfully!"
+      );
 
-    const fixedUser = {
-      ...data.user,
-      role: data.user.role.toLowerCase(),
-    };
+      return fixedUser;
+    } catch (err) {
+      const msg =
+        err.response?.data
+          ?.message ||
+        "Login failed";
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(fixedUser));
+      toast.error(msg);
 
-    setToken(data.token);
-    setUser(fixedUser);
+      throw err;
+    }
+  };
 
-    toast.success("Registered successfully!");
+  /* ───────────────── REGISTER ───────────────── */
 
-    return fixedUser; // ✅ SAME FIX
+  const register = async (
+    userData
+  ) => {
+    try {
+      const data =
+        await authService.register(
+          userData
+        );
 
-  } catch (err) {
-    const msg = err.response?.data?.message || "Registration failed";
-    toast.error(msg);
-    throw err;
-  }
-};
-  // 🚪 LOGOUT
+      const fixedUser = {
+        ...data.user,
+        role:
+          data.user.role.toLowerCase(),
+      };
+
+      localStorage.setItem(
+        "token",
+        data.token
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(
+          fixedUser
+        )
+      );
+
+      setToken(data.token);
+
+      setUser(fixedUser);
+
+      toast.success(
+        "Registered successfully!"
+      );
+
+      return fixedUser;
+    } catch (err) {
+      const msg =
+        err.response?.data
+          ?.message ||
+        "Registration failed";
+
+      toast.error(msg);
+
+      throw err;
+    }
+  };
+
+  /* ───────────────── LOGOUT ───────────────── */
+
   const logout = async () => {
     try {
       await authService.logout();
     } catch (err) {
       console.error(err);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user'); // ✅ IMPORTANT
+      localStorage.removeItem(
+        "token"
+      );
+
+      localStorage.removeItem(
+        "user"
+      );
+
       setToken(null);
+
       setUser(null);
-      toast.info('Logged out');
+
+      toast.info(
+        "Logged out"
+      );
     }
   };
 
@@ -136,6 +277,7 @@ const login = async (email, password, loginRole) => {
       value={{
         user,
         token,
+        api, // ✅ IMPORTANT FIX
         isAuthenticated,
         role,
         loading,

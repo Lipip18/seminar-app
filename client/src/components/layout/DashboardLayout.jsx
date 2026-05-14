@@ -1,17 +1,17 @@
-import React, { useContext, useState } from 'react';
+import {
+  Building,
+  Calendar,
+  CreditCard,
+  Home,
+  LogOut,
+  Menu,
+  Settings,
+  Users,
+  X
+} from 'lucide-react';
+import { useContext, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { 
-  Home, 
-  Calendar, 
-  Settings, 
-  LogOut, 
-  Users, 
-  Building,
-  Menu,
-  X,
-  CreditCard
-} from 'lucide-react';
 
 const SidebarLink = ({ to, icon: Icon, label, onClick }) => (
   <NavLink
@@ -98,11 +98,6 @@ export default function DashboardLayout({ role }) {
 
         <div className="px-6 pb-4">
            <div className="flex items-center gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
-              <img 
-                src={user?.profilePhoto || 'https://via.placeholder.com/150'} 
-                alt="Profile" 
-                className="w-10 h-10 rounded-full border border-secondary"
-              />
               <div className="overflow-hidden">
                  <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
                  <p className="text-xs text-accent">{user?.role}</p>

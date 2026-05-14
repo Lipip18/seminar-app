@@ -290,8 +290,7 @@ const Calendar = () => {
           </h1>
 
           <p className="text-slate-500 mt-2">
-            View approved
-            bookings and
+            View
             scheduled events
           </p>
         </div>
@@ -503,8 +502,7 @@ const Calendar = () => {
 
                 <p className="text-slate-400 text-sm mt-2">
                   There are no
-                  approved
-                  bookings for
+                  events for
                   this date
                 </p>
               </div>
@@ -599,8 +597,7 @@ const Calendar = () => {
               </p>
 
               <p className="text-slate-400 text-sm mt-2">
-                Approved
-                bookings will
+                Upcoming events will
                 appear here
               </p>
             </div>
