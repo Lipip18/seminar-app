@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AuthContext } from "../../context/AuthContext";
@@ -10,15 +11,20 @@ export default function Login() {
     role: "student",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const { email, password, role } = formData;
 
-  const { login, user } = useContext(AuthContext); // ✅ IMPORTANT
+  const { login, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const onChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
 
-  // ✅ 🔥 FINAL REDIRECT FIX (THIS SOLVES YOUR ISSUE)
+  // Redirect after successful login
   useEffect(() => {
     if (user?.role) {
       const role = user.role.toLowerCase();
@@ -33,7 +39,7 @@ export default function Login() {
         navigate("/student/dashboard");
       }
     }
-  }, [user, navigate]); // ✅ TRIGGERS AFTER LOGIN
+  }, [user, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -41,15 +47,13 @@ export default function Login() {
     if (!email || !password) {
       return toast.error("Please enter email and password");
     }
-    const res = await login(email, password, role);
-console.log("LOGIN RESPONSE:", res);
 
     try {
-      await login(email, password, role);
+      const res = await login(email, password, role);
 
-      // ❌ DO NOT REDIRECT HERE
-      // redirect will happen automatically via useEffect
+      console.log("LOGIN RESPONSE:", res);
 
+      // Redirect handled by useEffect
     } catch (err) {
       console.error(err);
       toast.error("Login failed");
@@ -58,28 +62,29 @@ console.log("LOGIN RESPONSE:", res);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-
-      {/* Back */}
+      {/* Back Button */}
       <div className="absolute top-8 left-8">
-        <Link to="/" className="text-indigo-600 font-semibold">
+        <Link
+          to="/"
+          className="text-indigo-600 font-semibold hover:text-indigo-800"
+        >
           ← Back to Home
         </Link>
       </div>
 
-      {/* Card */}
+      {/* Login Card */}
       <div className="w-full max-w-md p-8 bg-white shadow-xl rounded-xl">
         <h2 className="text-3xl font-bold text-center mb-6 text-gray-900">
           Welcome Back
         </h2>
 
         <form onSubmit={onSubmit} className="space-y-5">
-
           {/* Role */}
           <select
             name="role"
             value={role}
             onChange={onChange}
-            className="w-full p-3 border rounded-lg"
+            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="admin">Admin</option>
             <option value="faculty">Faculty</option>
@@ -93,33 +98,51 @@ console.log("LOGIN RESPONSE:", res);
             value={email}
             onChange={onChange}
             placeholder="Email"
-            className="w-full p-3 border rounded-lg"
+            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
 
-          {/* Password */}
-          <input
-            type="password"
-            name="password"
-            value={password}
-            onChange={onChange}
-            placeholder="Password"
-            className="w-full p-3 border rounded-lg"
-            required
-          />
+          {/* Password with Eye Button */}
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={password}
+              onChange={onChange}
+              placeholder="Password"
+              className="w-full p-3 border rounded-lg pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            />
 
-          {/* Button */}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600"
+            >
+              {showPassword ? (
+                <FaEyeSlash size={18} />
+              ) : (
+                <FaEye size={18} />
+              )}
+            </button>
+          </div>
+
+          {/* Login Button */}
           <button
             type="submit"
-            className="w-full p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="w-full p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200"
           >
             Login
           </button>
         </form>
 
-        <p className="text-center mt-4 text-sm">
+        {/* Register Link */}
+        <p className="text-center mt-4 text-sm text-gray-600">
           Don't have an account?{" "}
-          <Link to="/register" className="text-indigo-600">
+          <Link
+            to="/register"
+            className="text-indigo-600 font-medium hover:text-indigo-800"
+          >
             Register
           </Link>
         </p>
