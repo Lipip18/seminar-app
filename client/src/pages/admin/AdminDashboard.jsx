@@ -23,7 +23,7 @@ const Avatar = ({ name, size = 34 }) => {
 const STATUS_CFG = {
   Approved: { bg: "#f0fdf4", border: "#86efac", color: "#15803d", dot: "#16a34a" },
   Rejected: { bg: "#fef2f2", border: "#fca5a5", color: "#b91c1c", dot: "#dc2626" },
-  Pending:  { bg: "#fffbeb", border: "#fcd34d", color: "#b45309", dot: "#d97706" },
+  Pending: { bg: "#fffbeb", border: "#fcd34d", color: "#b45309", dot: "#d97706" },
 };
 
 const StatusPill = ({ status }) => {
@@ -64,7 +64,7 @@ const ActionModal = ({ booking, action, onClose, onConfirm, loading }) => {
           {isApprove ? "Approve booking?" : "Reject booking?"}
         </h2>
         <p style={{ margin: "0 0 6px", fontSize: 14, color: "#374151" }}>
-          <strong>{booking.bookedBy?.name || "Unknown"}</strong> — {booking.hallId?.name || "Hall"}
+          <strong>{booking.user?.name || "Unknown"}</strong> — {booking.hall?.name || "Hall"}
         </p>
         <p style={{ margin: "0 0 1.5rem", fontSize: 13, color: "#64748b" }}>
           {fmt(booking.date)} · {booking.startTime} – {booking.endTime}
@@ -149,11 +149,12 @@ export default function AdminDashboard() {
       const [hallsRes, usersRes, bookingsRes] = await Promise.all([
         api.get("/halls?limit=1"),
         api.get("/users?limit=1"),
-        api.get("/bookings?sort=-createdAt"),
+        api.get("/bookings"),
       ]);
       const bookings = bookingsRes.data.data || [];
+      console.log("BOOKINGS RECEIVED:", bookings);
       setAllBookings(bookings);
-      setRecentBookings(bookings.slice(0, 8));
+      setRecentBookings(bookings);
       setStats({
         halls: hallsRes.data.count || 0,
         users: usersRes.data.count || 0,
@@ -189,13 +190,17 @@ export default function AdminDashboard() {
 
   /* filter table */
   const displayed = recentBookings.filter((b) => {
-    const matchStatus = statusFilter === "all" || b.status === statusFilter;
-    const q = search.toLowerCase();
-    const matchSearch = !q ||
-      b.bookedBy?.name?.toLowerCase().includes(q) ||
-      b.hallId?.name?.toLowerCase().includes(q);
-    return matchStatus && matchSearch;
-  });
+  const matchStatus = statusFilter === "all" || b.status === statusFilter;
+  const q = search.toLowerCase();
+  const matchSearch =
+    !q ||
+    b.bookedBy?.name?.toLowerCase().includes(q) ||
+    b.hallId?.name?.toLowerCase().includes(q);
+
+  return matchStatus && matchSearch;
+});
+
+console.log("DISPLAYED BOOKINGS:", displayed);
 
   /* chart data */
   const chartData = [
@@ -364,9 +369,9 @@ export default function AdminDashboard() {
                   {/* Requested by */}
                   <td style={{ padding: "12px 16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <Avatar name={b.bookedBy?.name} />
+                      <Avatar name={b.user?.name} />
                       <div>
-                        <p style={{ margin: 0, fontWeight: 600, color: "#0f172a" }}>{b.bookedBy?.name || "Unknown"}</p>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#0f172a" }}>{b.user?.name || "Unknown"}</p>
                         <p style={{ margin: 0, fontSize: 11, color: "#94a3b8", textTransform: "capitalize" }}>{b.bookedBy?.role || b.role || "—"}</p>
                       </div>
                     </div>
@@ -374,7 +379,7 @@ export default function AdminDashboard() {
 
                   {/* Hall */}
                   <td style={{ padding: "12px 16px" }}>
-                    <p style={{ margin: 0, fontWeight: 500, color: "#0f172a" }}>{b.hallId?.name || "Deleted hall"}</p>
+                    <p style={{ margin: 0, fontWeight: 500, color: "#0f172a" }}>{b.hall?.name || "Deleted hall"}</p>
                     {b.hallId?.location?.building && (
                       <p style={{ margin: 0, fontSize: 11, color: "#94a3b8" }}>{b.hallId.location.building}</p>
                     )}

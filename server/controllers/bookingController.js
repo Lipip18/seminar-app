@@ -41,7 +41,8 @@ exports.getBookings = async (req, res) => {
         .populate("hallId", "name")
         .populate("bookedBy", "name");
     }
-
+    console.log("BOOKINGS AFTER POPULATE:");
+    console.log(JSON.stringify(bookings, null, 2));
     const formatted = bookings.map((b) => ({
       _id: b._id,
       date: b.date,
@@ -308,7 +309,7 @@ exports.deleteBooking = async (req, res) => {
 
     if (
       booking.bookedBy.toString() !==
-        req.user._id.toString() &&
+      req.user._id.toString() &&
       role !== "admin"
     ) {
       return res.status(403).json({
