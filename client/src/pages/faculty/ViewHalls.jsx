@@ -1,1058 +1,442 @@
-import {
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import { toast } from "sonner";
-
 import { AuthContext } from "../../context/AuthContext";
 
+/* ── shared tokens ───────────────────────────────────────────── */
+const C = {
+  bg: "#f8fafc",
+  card: "#ffffff",
+  border: "#e2e8f0",
+  borderSoft: "#eef2f7",
+  text: "#0f172a",
+  sub: "#64748b",
+  faint: "#94a3b8",
+  primary: "#2563eb",
+  primarySoft: "#eff6ff",
+  violet: "#7c3aed",
+  green: "#16a34a",
+  greenBg: "#f0fdf4",
+  greenBorder: "#86efac",
+  red: "#dc2626",
+  redBg: "#fef2f2",
+  redBorder: "#fca5a5",
+};
+
+const isAvailable = (hall) =>
+  hall.isActive !== false && hall.status !== "Booked" && hall.status !== "Unavailable";
+
+/* ── small building-glyph icon (no external deps) ───────────── */
+const HallGlyph = ({ size = 56, muted = false }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ opacity: muted ? 0.55 : 1 }}>
+    <path d="M4 21V10.5L12 5l8 5.5V21" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M2.5 10.5 12 4l9.5 6.5" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <rect x="9.5" y="14.5" width="5" height="6.5" stroke="#fff" strokeWidth="1.4" />
+    <rect x="6" y="12" width="2" height="2" stroke="#fff" strokeWidth="1.2" />
+    <rect x="16" y="12" width="2" height="2" stroke="#fff" strokeWidth="1.2" />
+  </svg>
+);
+
+/* ── badge ───────────────────────────────────────────────────── */
+const Badge = ({ ok, children }) => (
+  <span style={{
+    display: "inline-flex", alignItems: "center", gap: 6,
+    padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+    background: ok ? C.greenBg : C.redBg,
+    color: ok ? "#15803d" : "#b91c1c",
+    border: `1px solid ${ok ? C.greenBorder : C.redBorder}`,
+    whiteSpace: "nowrap",
+  }}>
+    <span style={{ width: 6, height: 6, borderRadius: "50%", background: ok ? C.green : C.red }} />
+    {children}
+  </span>
+);
+
+/* ── hall card ───────────────────────────────────────────────── */
+const HallCard = ({ hall, onView, onBook }) => {
+  const [hovered, setHovered] = useState(false);
+  const available = isAvailable(hall);
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: C.card, borderRadius: 18, overflow: "hidden",
+        border: `1px solid ${C.border}`, display: "flex", flexDirection: "column",
+        boxShadow: hovered ? "0 12px 28px -12px rgba(15,23,42,0.18)" : "0 1px 3px rgba(15,23,42,0.04)",
+        transform: hovered ? "translateY(-3px)" : "translateY(0)",
+        transition: "box-shadow 0.25s ease, transform 0.25s ease",
+      }}
+    >
+      {/* Banner */}
+      <div style={{
+        height: 148, position: "relative",
+        background: `linear-gradient(135deg, ${C.primary}, ${C.violet})`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <div style={{
+          position: "absolute", inset: 0, opacity: 0.15,
+          backgroundImage: "radial-gradient(circle at 20% 20%, #fff 0, transparent 40%), radial-gradient(circle at 85% 75%, #fff 0, transparent 35%)",
+        }} />
+        <HallGlyph size={54} />
+        <div style={{ position: "absolute", top: 14, right: 14 }}>
+          <Badge ok={available}>{available ? "Available" : "Unavailable"}</Badge>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: "1.35rem", display: "flex", flexDirection: "column", flex: 1 }}>
+        <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: C.text, letterSpacing: "-0.01em" }}>
+          {hall.name}
+        </h2>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: C.sub, display: "flex", alignItems: "center", gap: 5 }}>
+          <span style={{ fontSize: 13 }}>📍</span>
+          {hall.location?.building || "Campus Building"}
+        </p>
+
+        <p style={{
+          margin: "14px 0 0", fontSize: 13.5, lineHeight: 1.65, color: "#475569",
+          display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>
+          {hall.description || "Seminar hall available for workshops, academic events and presentations."}
+        </p>
+
+        {/* Stats */}
+        <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div style={{ background: C.bg, borderRadius: 12, padding: "0.75rem 0.9rem", border: `1px solid ${C.borderSoft}` }}>
+            <p style={{ margin: 0, fontSize: 11, color: C.faint, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Capacity</p>
+            <p style={{ margin: "4px 0 0", fontSize: 18, fontWeight: 800, color: C.text }}>{hall.capacity || 0}</p>
+          </div>
+          <div style={{ background: C.bg, borderRadius: 12, padding: "0.75rem 0.9rem", border: `1px solid ${C.borderSoft}` }}>
+            <p style={{ margin: 0, fontSize: 11, color: C.faint, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Facilities</p>
+            <p style={{ margin: "4px 0 0", fontSize: 18, fontWeight: 800, color: C.text }}>{hall.facilities?.length || 0}</p>
+          </div>
+        </div>
+
+        {/* Facility chips */}
+        {hall.facilities?.length > 0 && (
+          <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {hall.facilities.slice(0, 4).map((f, i) => (
+              <span key={i} style={{
+                padding: "4px 10px", borderRadius: 999, background: C.primarySoft,
+                color: C.primary, fontSize: 11.5, fontWeight: 600,
+              }}>{f}</span>
+            ))}
+            {hall.facilities.length > 4 && (
+              <span style={{ padding: "4px 10px", borderRadius: 999, background: C.bg, color: C.sub, fontSize: 11.5, fontWeight: 600 }}>
+                +{hall.facilities.length - 4} more
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Spacer pushes footer down for equal card heights */}
+        <div style={{ flex: 1 }} />
+
+        {/* Footer buttons */}
+        <div style={{ marginTop: 18, display: "flex", gap: 10 }}>
+          <button
+            onClick={() => onView(hall)}
+            style={{
+              flex: 1, height: 42, borderRadius: 10, border: `1px solid ${C.border}`,
+              background: "#fff", color: C.text, fontWeight: 600, fontSize: 13.5, cursor: "pointer",
+            }}
+          >
+            View details
+          </button>
+          {available && (
+            <button
+              onClick={() => onBook(hall._id)}
+              style={{
+                flex: 1, height: 42, borderRadius: 10, border: "none",
+                background: C.primary, color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
+              }}
+            >
+              Book hall
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── details modal ──────────────────────────────────────────── */
+const HallModal = ({ hall, onClose, onBook }) => {
+  const available = isAvailable(hall);
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 9999, padding: 20, backdropFilter: "blur(2px)",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 560, background: "#fff", borderRadius: 20,
+          overflow: "hidden", maxHeight: "88vh", display: "flex", flexDirection: "column",
+          animation: "fadeUp 0.2s ease",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          height: 180, position: "relative", flexShrink: 0,
+          background: `linear-gradient(135deg, ${C.primary}, ${C.violet})`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <HallGlyph size={64} />
+          <button onClick={onClose} style={{
+            position: "absolute", top: 14, right: 14, width: 32, height: 32, borderRadius: 999,
+            border: "none", background: "rgba(255,255,255,0.2)", color: "#fff", fontSize: 16,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          }}>✕</button>
+        </div>
+
+        {/* Content (scrollable) */}
+        <div style={{ padding: "1.75rem", overflowY: "auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: C.text }}>{hall.name}</h2>
+              <p style={{ margin: "5px 0 0", color: C.sub, fontSize: 13.5 }}>
+                📍 {hall.location?.building || "Campus Building"}
+              </p>
+            </div>
+            <Badge ok={available}>{available ? "Available" : "Unavailable"}</Badge>
+          </div>
+
+          <p style={{ marginTop: 18, lineHeight: 1.75, color: "#475569", fontSize: 14.5 }}>
+            {hall.description || "Seminar hall available for workshops, academic events and presentations."}
+          </p>
+
+          <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ background: C.bg, borderRadius: 12, padding: "0.9rem 1rem", border: `1px solid ${C.borderSoft}` }}>
+              <p style={{ margin: 0, fontSize: 11, color: C.faint, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Seating capacity</p>
+              <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 800, color: C.text }}>{hall.capacity || 0}</p>
+            </div>
+            <div style={{ background: C.bg, borderRadius: 12, padding: "0.9rem 1rem", border: `1px solid ${C.borderSoft}` }}>
+              <p style={{ margin: 0, fontSize: 11, color: C.faint, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Facilities</p>
+              <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 800, color: C.text }}>{hall.facilities?.length || 0}</p>
+            </div>
+          </div>
+
+          {hall.facilities?.length > 0 && (
+            <div style={{ marginTop: 22 }}>
+              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#334155" }}>Available facilities</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {hall.facilities.map((f, i) => (
+                  <span key={i} style={{
+                    padding: "7px 12px", borderRadius: 999, background: C.primarySoft,
+                    color: C.primary, fontSize: 12.5, fontWeight: 600,
+                  }}>{f}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer actions */}
+        <div style={{ padding: "1.25rem 1.75rem", borderTop: `1px solid ${C.borderSoft}`, display: "flex", gap: 10, flexShrink: 0 }}>
+          <button onClick={onClose} style={{
+            flex: 1, height: 46, borderRadius: 12, border: `1px solid ${C.border}`,
+            background: "#fff", color: C.text, fontWeight: 600, cursor: "pointer",
+          }}>Close</button>
+          {available && (
+            <button onClick={() => onBook(hall._id)} style={{
+              flex: 1, height: 46, borderRadius: 12, border: "none",
+              background: C.primary, color: "#fff", fontWeight: 700, cursor: "pointer",
+            }}>Book this hall</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── main ────────────────────────────────────────────────────── */
 const ViewHalls = () => {
   const { api } = useContext(AuthContext);
-
   const navigate = useNavigate();
 
   const [halls, setHalls] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
+  const [capacityFilter, setCapacityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedHall, setSelectedHall] = useState(null);
 
-  const [capacityFilter, setCapacityFilter] =
-    useState("all");
+  useEffect(() => { fetchHalls(); }, [api]);
 
-  const [statusFilter, setStatusFilter] =
-    useState("all");
-
-  const [selectedHall, setSelectedHall] =
-    useState(null);
-
-  /* ───────────────── FETCH HALLS ───────────────── */
-
-  useEffect(() => {
-    fetchHalls();
-  }, [api]);
-
-  const fetchHalls = async () => {
+  const fetchHalls = async (silent = false) => {
     try {
-      setLoading(true);
-
+      silent ? setRefreshing(true) : setLoading(true);
       const res = await api.get("/halls");
-
-      console.log(
-        "HALLS RESPONSE:",
-        res.data
-      );
-
-      const hallsData =
-        res.data?.data || [];
-
-      setHalls(hallsData);
+      setHalls(res.data?.data || []);
     } catch (err) {
-      console.error(
-        "FETCH HALLS ERROR:",
-        err
-      );
-
-      toast.error(
-        err?.response?.data
-          ?.message ||
-          "Failed to load halls"
-      );
+      toast.error(err?.response?.data?.message || "Failed to load halls");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  /* ───────────────── FILTERING ───────────────── */
-
   const filteredHalls = useMemo(() => {
     return halls.filter((hall) => {
-      const q =
-        search.toLowerCase();
-
+      const q = search.toLowerCase();
       const matchesSearch =
         !q ||
-        hall.name
-          ?.toLowerCase()
-          .includes(q) ||
-        hall.location?.building
-          ?.toLowerCase()
-          .includes(q);
+        hall.name?.toLowerCase().includes(q) ||
+        hall.location?.building?.toLowerCase().includes(q);
 
       const matchesCapacity =
-        capacityFilter ===
-          "all" ||
-        (capacityFilter ===
-          "small" &&
-          hall.capacity <= 50) ||
-        (capacityFilter ===
-          "medium" &&
-          hall.capacity > 50 &&
-          hall.capacity <= 150) ||
-        (capacityFilter ===
-          "large" &&
-          hall.capacity > 150);
+        capacityFilter === "all" ||
+        (capacityFilter === "small" && hall.capacity <= 50) ||
+        (capacityFilter === "medium" && hall.capacity > 50 && hall.capacity <= 150) ||
+        (capacityFilter === "large" && hall.capacity > 150);
 
       const matchesStatus =
-        statusFilter ===
-          "all" ||
-        (statusFilter ===
-          "active" &&
-          hall.isActive !== false) ||
-        (statusFilter ===
-          "inactive" &&
-          hall.isActive === false);
+        statusFilter === "all" ||
+        (statusFilter === "active" && isAvailable(hall)) ||
+        (statusFilter === "inactive" && !isAvailable(hall));
 
-      return (
-        matchesSearch &&
-        matchesCapacity &&
-        matchesStatus
-      );
+      return matchesSearch && matchesCapacity && matchesStatus;
     });
-  }, [
-    halls,
-    search,
-    capacityFilter,
-    statusFilter,
-  ]);
+  }, [halls, search, capacityFilter, statusFilter]);
 
-  /* ───────────────── BOOK HALL ───────────────── */
+  const handleBookHall = (hallId) => navigate(`/faculty/book-hall/${hallId}`);
 
-  const handleBookHall = (
-    hallId
-  ) => {
-    navigate(
-      `/faculty/book-hall/${hallId}`
-    );
+  const selectStyle = {
+    height: 44, padding: "0 14px", borderRadius: 10,
+    border: `1px solid ${C.border}`, background: "#fff",
+    outline: "none", fontSize: 13.5, color: "#334155", fontWeight: 500, cursor: "pointer",
   };
-
-  /* ───────────────── LOADING ───────────────── */
 
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "80vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent:
-            "center",
-          background: "#f8fafc",
-          flexDirection:
-            "column",
-          gap: 16,
-        }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            border:
-              "4px solid #e2e8f0",
-            borderTopColor:
-              "#2563eb",
-            borderRadius:
-              "50%",
-            animation:
-              "spin 0.8s linear infinite",
-          }}
-        />
-
-        <p
-          style={{
-            margin: 0,
-            color: "#64748b",
-            fontSize: 14,
-          }}
-        >
-          Loading halls...
-        </p>
-
-        <style>
-          {`
-            @keyframes spin {
-              to {
-                transform: rotate(360deg);
-              }
-            }
-          `}
-        </style>
+      <div style={{
+        minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: C.bg, flexDirection: "column", gap: 16,
+      }}>
+        <div style={{
+          width: 40, height: 40, border: "4px solid #e2e8f0", borderTopColor: C.primary,
+          borderRadius: "50%", animation: "spin 0.8s linear infinite",
+        }} />
+        <p style={{ margin: 0, color: C.sub, fontSize: 14 }}>Loading halls…</p>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f8fafc",
-        padding: "2rem",
-        fontFamily:
-          "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-      }}
-    >
-      {/* HEADER */}
+    <div style={{
+      minHeight: "100vh", background: C.bg, padding: "2rem",
+      fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+    }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 14,
-          marginBottom:
-            "2rem",
-        }}
-      >
+      {/* Header */}
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+        flexWrap: "wrap", gap: 14, marginBottom: "1.75rem",
+      }}>
         <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 30,
-              fontWeight: 800,
-              color: "#0f172a",
-            }}
-          >
-            Available Seminar
-            Halls
+          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text, letterSpacing: "-0.02em" }}>
+            Available seminar halls
           </h1>
-
-          <p
-            style={{
-              marginTop: 6,
-              color: "#64748b",
-              fontSize: 14,
-            }}
-          >
-            View seminar halls
-            added by
-            administration
+          <p style={{ marginTop: 6, color: C.sub, fontSize: 14 }}>
+            Browse halls added by administration and book one for your event
           </p>
         </div>
 
-        <button
-          onClick={fetchHalls}
-          style={{
-            height: 42,
-            padding:
-              "0 18px",
-            borderRadius: 10,
-            border:
-              "1px solid #cbd5e1",
-            background: "#fff",
-            cursor: "pointer",
-            fontWeight: 600,
-            color: "#0f172a",
-          }}
-        >
-          Refresh
+        <button onClick={() => fetchHalls(true)} disabled={refreshing} style={{
+          height: 42, padding: "0 18px", borderRadius: 10, border: `1px solid ${C.border}`,
+          background: "#fff", cursor: refreshing ? "not-allowed" : "pointer", fontWeight: 600,
+          color: C.text, fontSize: 13.5, display: "flex", alignItems: "center", gap: 8,
+          opacity: refreshing ? 0.6 : 1,
+        }}>
+          <span style={{ display: "inline-block", animation: refreshing ? "spin 0.8s linear infinite" : "none" }}>↻</span>
+          {refreshing ? "Refreshing…" : "Refresh"}
         </button>
       </div>
 
-      {/* FILTERS */}
+      {/* Filters */}
+      <div style={{
+        background: "#fff", border: `1px solid ${C.border}`, borderRadius: 16,
+        padding: "1rem", marginBottom: "1.75rem", display: "flex", gap: 12, flexWrap: "wrap",
+      }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
+          <span style={{
+            position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+            color: C.faint, fontSize: 15, pointerEvents: "none",
+          }}>⌕</span>
+          <input
+            type="text"
+            placeholder="Search hall or building…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%", height: 44, padding: "0 14px 0 36px", borderRadius: 10,
+              border: `1px solid ${C.border}`, outline: "none", fontSize: 14,
+              background: "#fff", boxSizing: "border-box", color: "#334155",
+            }}
+          />
+        </div>
 
-      <div
-        style={{
-          background: "#fff",
-          border:
-            "1px solid #e2e8f0",
-          borderRadius: 16,
-          padding: "1rem",
-          marginBottom:
-            "1.5rem",
-          display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        {/* SEARCH */}
-
-        <input
-          type="text"
-          placeholder="Search hall or building..."
-          value={search}
-          onChange={(e) =>
-            setSearch(
-              e.target.value
-            )
-          }
-          style={{
-            flex: 1,
-            minWidth: 220,
-            height: 42,
-            padding:
-              "0 14px",
-            borderRadius: 10,
-            border:
-              "1px solid #cbd5e1",
-            outline: "none",
-            fontSize: 14,
-            background: "#fff",
-          }}
-        />
-
-        {/* CAPACITY */}
-
-        <select
-          value={
-            capacityFilter
-          }
-          onChange={(e) =>
-            setCapacityFilter(
-              e.target.value
-            )
-          }
-          style={{
-            height: 42,
-            padding:
-              "0 14px",
-            borderRadius: 10,
-            border:
-              "1px solid #cbd5e1",
-            background: "#fff",
-            outline: "none",
-          }}
-        >
-          <option value="all">
-            All Capacities
-          </option>
-
-          <option value="small">
-            Small (≤ 50)
-          </option>
-
-          <option value="medium">
-            Medium (51 - 150)
-          </option>
-
-          <option value="large">
-            Large (150+)
-          </option>
+        <select value={capacityFilter} onChange={(e) => setCapacityFilter(e.target.value)} style={selectStyle}>
+          <option value="all">All capacities</option>
+          <option value="small">Small (≤ 50)</option>
+          <option value="medium">Medium (51–150)</option>
+          <option value="large">Large (150+)</option>
         </select>
 
-        {/* STATUS */}
-
-        <select
-          value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(
-              e.target.value
-            )
-          }
-          style={{
-            height: 42,
-            padding:
-              "0 14px",
-            borderRadius: 10,
-            border:
-              "1px solid #cbd5e1",
-            background: "#fff",
-            outline: "none",
-          }}
-        >
-          <option value="all">
-            All Status
-          </option>
-
-          <option value="active">
-            Available
-          </option>
-
-          <option value="inactive">
-            Unavailable
-          </option>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
+          <option value="all">All status</option>
+          <option value="active">Available</option>
+          <option value="inactive">Unavailable</option>
         </select>
       </div>
 
-      {/* HALLS GRID */}
+      {/* Results count */}
+      <p style={{ margin: "0 0 1rem", fontSize: 13, color: C.faint }}>
+        {filteredHalls.length} hall{filteredHalls.length !== 1 ? "s" : ""} found
+      </p>
 
-      {filteredHalls.length ===
-      0 ? (
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 18,
-            border:
-              "1px solid #e2e8f0",
-            padding:
-              "4rem 2rem",
-            textAlign:
-              "center",
-          }}
-        >
-          <div
-            style={{
-              fontSize: 52,
-              marginBottom: 14,
-            }}
-          >
-            🏛
-          </div>
-
-          <h2
-            style={{
-              margin: 0,
-              color: "#0f172a",
-            }}
-          >
-            No halls found
-          </h2>
-
-          <p
-            style={{
-              marginTop: 8,
-              color: "#64748b",
-            }}
-          >
-            Try changing
-            search or
-            filters
+      {/* Grid / empty state */}
+      {filteredHalls.length === 0 ? (
+        <div style={{
+          background: "#fff", borderRadius: 18, border: `1px solid ${C.border}`,
+          padding: "4rem 2rem", textAlign: "center",
+        }}>
+          <div style={{ fontSize: 46, marginBottom: 14 }}>🏛</div>
+          <h2 style={{ margin: 0, color: C.text, fontSize: 18 }}>No halls found</h2>
+          <p style={{ marginTop: 8, color: C.sub, fontSize: 14 }}>
+            Try adjusting your search or filters
           </p>
         </div>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit,minmax(320px,1fr))",
-            gap: 22,
-          }}
-        >
-          {filteredHalls.map(
-            (hall) => (
-              <div
-                key={hall._id}
-                style={{
-                  background:
-                    "#fff",
-                  borderRadius: 18,
-                  overflow:
-                    "hidden",
-                  border:
-                    "1px solid #e2e8f0",
-                  transition:
-                    "0.2s ease",
-                  boxShadow:
-                    "0 1px 3px rgba(0,0,0,0.04)",
-                }}
-              >
-                {/* BANNER */}
-
-                <div
-                  style={{
-                    height: 190,
-                    background:
-                      "linear-gradient(135deg,#2563eb,#7c3aed)",
-                    display:
-                      "flex",
-                    alignItems:
-                      "center",
-                    justifyContent:
-                      "center",
-                    color: "#fff",
-                    fontSize: 60,
-                    fontWeight: 700,
-                  }}
-                >
-                  🏛
-                </div>
-
-                {/* CONTENT */}
-
-                <div
-                  style={{
-                    padding:
-                      "1.4rem",
-                  }}
-                >
-                  {/* TITLE */}
-
-                  <div
-                    style={{
-                      display:
-                        "flex",
-                      justifyContent:
-                        "space-between",
-                      alignItems:
-                        "flex-start",
-                      gap: 12,
-                      marginBottom: 14,
-                    }}
-                  >
-                    <div>
-                      <h2
-                        style={{
-                          margin: 0,
-                          fontSize: 22,
-                          color:
-                            "#0f172a",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {
-                          hall.name
-                        }
-                      </h2>
-
-                      <p
-                        style={{
-                          marginTop: 5,
-                          color:
-                            "#64748b",
-                          fontSize: 13,
-                        }}
-                      >
-                        {hall
-                          .location
-                          ?.building ||
-                          "Campus Building"}
-                      </p>
-                    </div>
-
-                    <span
-                      style={{
-                        padding:
-                          "5px 10px",
-                        borderRadius: 999,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        background:
-                          hall.isActive !==
-                            false &&
-                          hall.status !==
-                            "Booked" &&
-                          hall.status !==
-                            "Unavailable"
-                            ? "#f0fdf4"
-                            : "#fef2f2",
-                        color:
-                          hall.isActive !==
-                            false &&
-                          hall.status !==
-                            "Booked" &&
-                          hall.status !==
-                            "Unavailable"
-                            ? "#15803d"
-                            : "#b91c1c",
-                      }}
-                    >
-                      {hall.isActive !==
-                        false &&
-                      hall.status !==
-                        "Booked" &&
-                      hall.status !==
-                        "Unavailable"
-                        ? "Available"
-                        : "Unavailable"}
-                    </span>
-                  </div>
-
-                  {/* DESCRIPTION */}
-
-                  <p
-                    style={{
-                      color:
-                        "#64748b",
-                      fontSize: 14,
-                      lineHeight: 1.7,
-                      minHeight: 60,
-                    }}
-                  >
-                    {hall.description ||
-                      "Seminar hall available for workshops, academic events and presentations."}
-                  </p>
-
-                  {/* DETAILS */}
-
-                  <div
-                    style={{
-                      marginTop: 18,
-                      display:
-                        "grid",
-                      gridTemplateColumns:
-                        "1fr 1fr",
-                      gap: 12,
-                    }}
-                  >
-                    <div
-                      style={{
-                        background:
-                          "#f8fafc",
-                        borderRadius: 12,
-                        padding:
-                          "1rem",
-                      }}
-                    >
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: 12,
-                          color:
-                            "#64748b",
-                        }}
-                      >
-                        Seating
-                        Capacity
-                      </p>
-
-                      <h3
-                        style={{
-                          margin:
-                            "6px 0 0",
-                          color:
-                            "#0f172a",
-                        }}
-                      >
-                        {hall.capacity ||
-                          0}
-                      </h3>
-                    </div>
-
-                    <div
-                      style={{
-                        background:
-                          "#f8fafc",
-                        borderRadius: 12,
-                        padding:
-                          "1rem",
-                      }}
-                    >
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: 12,
-                          color:
-                            "#64748b",
-                        }}
-                      >
-                        Facilities
-                      </p>
-
-                      <h3
-                        style={{
-                          margin:
-                            "6px 0 0",
-                          color:
-                            "#0f172a",
-                          fontSize: 15,
-                        }}
-                      >
-                        {hall
-                          .facilities
-                          ?.length ||
-                          0}{" "}
-                        Items
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* FACILITIES */}
-
-                  {hall
-                    .facilities
-                    ?.length >
-                    0 && (
-                    <div
-                      style={{
-                        marginTop: 18,
-                      }}
-                    >
-                      <p
-                        style={{
-                          marginBottom: 10,
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color:
-                            "#475569",
-                        }}
-                      >
-                        Available
-                        Facilities
-                      </p>
-
-                      <div
-                        style={{
-                          display:
-                            "flex",
-                          flexWrap:
-                            "wrap",
-                          gap: 8,
-                        }}
-                      >
-                        {hall.facilities.map(
-                          (
-                            facility,
-                            i
-                          ) => (
-                            <span
-                              key={
-                                i
-                              }
-                              style={{
-                                padding:
-                                  "6px 10px",
-                                borderRadius: 999,
-                                background:
-                                  "#eff6ff",
-                                color:
-                                  "#2563eb",
-                                fontSize: 12,
-                                fontWeight: 500,
-                              }}
-                            >
-                              {
-                                facility
-                              }
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* FOOTER */}
-
-                  <div
-                    style={{
-                      marginTop: 24,
-                      display:
-                        "flex",
-                      flexDirection:
-                        "column",
-                      gap: 12,
-                    }}
-                  >
-                    {/* STATUS */}
-
-                    {hall.isActive ===
-                      false ||
-                    hall.status ===
-                      "Booked" ||
-                    hall.status ===
-                      "Unavailable" ? (
-                      <div
-                        style={{
-                          padding:
-                            "10px 14px",
-                          borderRadius: 10,
-                          background:
-                            "#fef2f2",
-                          color:
-                            "#b91c1c",
-                          fontSize: 14,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Hall is
-                        currently
-                        unavailable
-                        for booking
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          padding:
-                            "10px 14px",
-                          borderRadius: 10,
-                          background:
-                            "#f0fdf4",
-                          color:
-                            "#15803d",
-                          fontSize: 14,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Hall is
-                        available
-                        for booking
-                      </div>
-                    )}
-
-                    {/* BUTTONS */}
-
-                    <div
-                      style={{
-                        display:
-                          "flex",
-                        gap: 12,
-                      }}
-                    >
-                      {/* VIEW */}
-
-                      <button
-                        onClick={() =>
-                          setSelectedHall(
-                            hall
-                          )
-                        }
-                        style={{
-                          flex: 1,
-                          height: 42,
-                          borderRadius: 10,
-                          border:
-                            "none",
-                          background:
-                            "#0f172a",
-                          color:
-                            "#fff",
-                          fontWeight: 600,
-                          cursor:
-                            "pointer",
-                        }}
-                      >
-                        View
-                        Details
-                      </button>
-
-                      {/* BOOK */}
-
-                      {hall.isActive !==
-                        false &&
-                        hall.status !==
-                          "Booked" &&
-                        hall.status !==
-                          "Unavailable" && (
-                          <button
-                            onClick={() =>
-                              handleBookHall(
-                                hall._id
-                              )
-                            }
-                            style={{
-                              flex: 1,
-                              height: 42,
-                              borderRadius: 10,
-                              border:
-                                "none",
-                              background:
-                                "#2563eb",
-                              color:
-                                "#fff",
-                              fontWeight: 600,
-                              cursor:
-                                "pointer",
-                            }}
-                          >
-                            Book
-                            Hall
-                          </button>
-                        )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          )}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 20 }}>
+          {filteredHalls.map((hall) => (
+            <HallCard
+              key={hall._id}
+              hall={hall}
+              onView={setSelectedHall}
+              onBook={handleBookHall}
+            />
+          ))}
         </div>
       )}
 
-      {/* MODAL */}
-
+      {/* Modal */}
       {selectedHall && (
-        <div
-          onClick={() =>
-            setSelectedHall(
-              null
-            )
-          }
-          style={{
-            position:
-              "fixed",
-            inset: 0,
-            background:
-              "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems:
-              "center",
-            justifyContent:
-              "center",
-            zIndex: 9999,
-            padding: 20,
-          }}
-        >
-          <div
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-            style={{
-              width: "100%",
-              maxWidth: 600,
-              background:
-                "#fff",
-              borderRadius: 20,
-              overflow:
-                "hidden",
-            }}
-          >
-            {/* HEADER */}
-
-            <div
-              style={{
-                height: 220,
-                background:
-                  "linear-gradient(135deg,#2563eb,#7c3aed)",
-                display:
-                  "flex",
-                justifyContent:
-                  "center",
-                alignItems:
-                  "center",
-                fontSize: 72,
-                color: "#fff",
-              }}
-            >
-              🏛
-            </div>
-
-            {/* CONTENT */}
-
-            <div
-              style={{
-                padding:
-                  "2rem",
-              }}
-            >
-              <h2
-                style={{
-                  marginTop: 0,
-                  color:
-                    "#0f172a",
-                }}
-              >
-                {
-                  selectedHall.name
-                }
-              </h2>
-
-              <p
-                style={{
-                  color:
-                    "#64748b",
-                  marginTop: 6,
-                }}
-              >
-                {selectedHall
-                  .location
-                  ?.building ||
-                  "Campus Building"}
-              </p>
-
-              <p
-                style={{
-                  marginTop: 20,
-                  lineHeight: 1.8,
-                  color:
-                    "#475569",
-                }}
-              >
-                {
-                  selectedHall.description
-                }
-              </p>
-
-              {/* FACILITIES */}
-
-              <div
-                style={{
-                  marginTop: 24,
-                }}
-              >
-                <h4
-                  style={{
-                    marginBottom: 12,
-                  }}
-                >
-                  Facilities
-                </h4>
-
-                <div
-                  style={{
-                    display:
-                      "flex",
-                    flexWrap:
-                      "wrap",
-                    gap: 10,
-                  }}
-                >
-                  {selectedHall.facilities?.map(
-                    (
-                      facility,
-                      index
-                    ) => (
-                      <span
-                        key={
-                          index
-                        }
-                        style={{
-                          padding:
-                            "8px 12px",
-                          borderRadius: 999,
-                          background:
-                            "#eff6ff",
-                          color:
-                            "#2563eb",
-                          fontSize: 13,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {
-                          facility
-                        }
-                      </span>
-                    )
-                  )}
-                </div>
-              </div>
-
-              {/* CAPACITY */}
-
-              <div
-                style={{
-                  marginTop: 24,
-                  fontWeight: 600,
-                  color:
-                    "#0f172a",
-                }}
-              >
-                Capacity:{" "}
-                {
-                  selectedHall.capacity
-                }
-              </div>
-
-              {/* CLOSE */}
-
-              <button
-                onClick={() =>
-                  setSelectedHall(
-                    null
-                  )
-                }
-                style={{
-                  marginTop: 30,
-                  width: "100%",
-                  height: 46,
-                  border:
-                    "none",
-                  borderRadius: 12,
-                  background:
-                    "#0f172a",
-                  color: "#fff",
-                  fontWeight: 600,
-                  cursor:
-                    "pointer",
-                }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <HallModal
+          hall={selectedHall}
+          onClose={() => setSelectedHall(null)}
+          onBook={handleBookHall}
+        />
       )}
     </div>
   );
