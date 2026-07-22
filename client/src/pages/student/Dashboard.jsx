@@ -1,4 +1,4 @@
-import { Building, Calendar, Clock } from 'lucide-react';
+import { Building, Calendar, Clock, Sparkles } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { AuthContext } from '../../context/AuthContext';
@@ -38,18 +38,25 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  if (loading) return <div className="text-gray-900 text-center py-20 animate-pulse font-medium">Loading Dashboard...</div>;
+  if (loading) return <div className="py-20 text-center text-gray-900 font-medium animate-pulse">Loading dashboard…</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-         <h1 className="text-3xl font-heading font-bold text-gray-900">Hello, {user?.name}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+         <div>
+           <h1 className="text-3xl font-heading font-bold text-gray-900">Hello, {user?.name}</h1>
+           <p className="mt-1 text-sm text-gray-500">Stay on top of campus events and the halls you may need.</p>
+         </div>
+         <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700">
+           <Sparkles className="h-4 w-4" />
+           Quick overview
+         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-2xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-sm md:p-8">
          <div className="relative z-10 w-full md:w-2/3">
-             <h2 className="text-2xl font-bold text-indigo-900 mb-2">Welcome to the Seminar Portal</h2>
-             <p className="text-indigo-700/80 mb-6 text-sm">View upcoming events, seminars, and check hall schedules to stay on top of campus activities.</p>
+             <h2 className="mb-2 text-2xl font-bold text-indigo-900">Welcome to the Seminar Portal</h2>
+             <p className="mb-6 text-sm text-indigo-700/80">View upcoming events, seminars, and check hall schedules to stay on top of campus activities.</p>
          </div>
       </div>
 
@@ -70,9 +77,9 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-8 overflow-hidden">
-         <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
-            <Clock className="w-5 h-5 text-secondary" />
+      <div className="mt-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+         <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/50 p-6">
+            <Clock className="h-5 w-5 text-blue-600" />
             <h2 className="text-xl font-bold text-gray-900">Upcoming Seminars & Events</h2>
          </div>
          <div className="overflow-x-auto">
@@ -88,7 +95,10 @@ export default function Dashboard() {
               <tbody className="divide-y divide-gray-100">
                  {upcomingSchedule.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-8 text-center text-gray-500">No upcoming events scheduled.</td>
+                      <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                        <div className="font-medium text-gray-700">No upcoming events scheduled</div>
+                        <div className="mt-1 text-sm text-gray-400">Your upcoming seminars will appear here once they are booked.</div>
+                      </td>
                     </tr>
                  ) : upcomingSchedule.map(b => (
                    <tr key={b._id} className="hover:bg-gray-50/50 transition-colors">

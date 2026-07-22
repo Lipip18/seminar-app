@@ -1,4 +1,5 @@
 const Hall = require("../models/Hall");
+const { normalizeHallPayload } = require("../utils/hallNormalizer");
 
 // ==============================
 // GET ALL HALLS
@@ -7,37 +8,10 @@ exports.getHalls = async (req, res) => {
   try {
     const halls = await Hall.find().sort("-createdAt");
 
-    // Format data for frontend
-    const formattedHalls = halls.map((hall) => ({
-      _id: hall._id,
-      name: hall.name,
-      description: hall.description || "",
-      capacity: hall.capacity || 0,
-
-      // frontend compatibility
-      isActive:
-        hall.isActive !== undefined
-          ? hall.isActive
-          : hall.status === "Available",
-
-      status: hall.status,
-
-      location: {
-        building:
-          hall.location?.building ||
-          hall.building ||
-          "Main Block",
-      },
-
-      facilities: hall.facilities || [],
-
-      createdAt: hall.createdAt,
-    }));
-
     res.status(200).json({
       success: true,
-      count: formattedHalls.length,
-      data: formattedHalls,
+      count: halls.length,
+      data: halls,
     });
   } catch (err) {
     console.error("GET HALLS ERROR:", err);
@@ -48,7 +22,6 @@ exports.getHalls = async (req, res) => {
     });
   }
 };
-
 // ==============================
 // GET SINGLE HALL
 // ==============================
@@ -82,7 +55,8 @@ exports.getHall = async (req, res) => {
 // ==============================
 exports.createHall = async (req, res) => {
   try {
-    const hall = await Hall.create(req.body);
+    const payload = normalizeHallPayload(req.body);
+    const hall = await Hall.create(payload);
 
     res.status(201).json({
       success: true,
@@ -121,7 +95,7 @@ exports.updateHall = async (req, res) => {
 
     hall = await Hall.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      normalizeHallPayload(req.body),
       {
         new: true,
         runValidators: true,

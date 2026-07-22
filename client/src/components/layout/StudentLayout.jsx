@@ -1,11 +1,11 @@
 import {
-  BookOpen,
-  Building,
-  Home,
-  LogOut,
-  Menu,
-  Settings,
-  X
+    BookOpen,
+    Building,
+    Home,
+    LogOut,
+    Menu,
+    Settings,
+    X
 } from 'lucide-react';
 import { useContext, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
@@ -57,7 +57,7 @@ export default function StudentLayout() {
   const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-slate-50 text-foreground">
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/20 lg:hidden backdrop-blur-sm"
@@ -72,10 +72,13 @@ export default function StudentLayout() {
             : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="p-6 flex items-center justify-between">
-          <h2 className="text-xl font-heading font-bold text-primary">
-            Student Portal
-          </h2>
+        <div className="flex items-center justify-between border-b border-gray-200 p-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-500">Student workspace</p>
+            <h2 className="text-xl font-heading font-bold text-primary">
+              Student Portal
+            </h2>
+          </div>
 
           <button
             className="lg:hidden text-gray-500"
@@ -86,7 +89,7 @@ export default function StudentLayout() {
         </div>
 
         <div className="px-6 pb-4">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+          <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
 
             <div className="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center font-semibold text-sm">
               {getInitials(user?.name)}
@@ -117,7 +120,7 @@ export default function StudentLayout() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
+        <div className="border-t border-gray-200 p-4">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all group"
@@ -148,7 +151,7 @@ export default function StudentLayout() {
           </div>
         </header>
 
-        <div className="p-6 md:p-8 flex-1 w-full max-w-7xl mx-auto">
+        <div className="mx-auto flex-1 w-full max-w-7xl p-6 md:p-8">
           <Outlet />
         </div>
       </main>

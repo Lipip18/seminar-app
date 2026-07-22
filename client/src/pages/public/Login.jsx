@@ -61,89 +61,97 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-      {/* Back Button */}
-      <div className="absolute top-8 left-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10 sm:px-6">
+      <div className="absolute left-4 top-4 sm:left-8 sm:top-8">
         <Link
           to="/"
-          className="text-indigo-600 font-semibold hover:text-indigo-800"
+          className="font-semibold text-indigo-600 transition hover:text-indigo-800"
         >
           ← Back to Home
         </Link>
       </div>
 
-      {/* Login Card */}
-      <div className="w-full max-w-md p-8 bg-white shadow-xl rounded-xl">
-        <h2 className="text-3xl font-bold text-center mb-6 text-gray-900">
-          Welcome Back
-        </h2>
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-xl">
+        <div className="mb-6 text-center">
+          <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
+          <p className="mt-2 text-sm text-gray-500">Sign in to manage bookings, halls, and schedules.</p>
+        </div>
 
         <form onSubmit={onSubmit} className="space-y-5">
           {/* Role */}
-          <select
-            name="role"
-            value={role}
-            onChange={onChange}
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="admin">Admin</option>
-            <option value="faculty">Faculty</option>
-            <option value="student">Student</option>
-          </select>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Sign in as</label>
+            <select
+              name="role"
+              value={role}
+              onChange={onChange}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="admin">Admin</option>
+              <option value="faculty">Faculty</option>
+              <option value="student">Student</option>
+            </select>
+          </div>
 
           {/* Email */}
-          <input
-            type="email"
-            name="email"
-            value={email}
-            onChange={onChange}
-            placeholder="Email"
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
-          />
-
-          {/* Password with Eye Button */}
-          <div className="relative">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Email address</label>
             <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={password}
+              type="email"
+              name="email"
+              value={email}
               onChange={onChange}
-              placeholder="Password"
-              className="w-full p-3 border rounded-lg pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="you@example.com"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
               required
             />
+          </div>
 
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600"
-            >
-              {showPassword ? (
-                <FaEyeSlash size={18} />
-              ) : (
-                <FaEye size={18} />
-              )}
-            </button>
+          {/* Password with Eye Button */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={password}
+                onChange={onChange}
+                placeholder="Enter your password"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 pr-12 text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-indigo-600"
+              >
+                {showPassword ? (
+                  <FaEyeSlash size={18} />
+                ) : (
+                  <FaEye size={18} />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200"
+            className="w-full rounded-lg bg-indigo-600 p-3 font-semibold text-white transition duration-200 hover:bg-indigo-700"
           >
-            Login
+            Sign in
           </button>
         </form>
 
         {/* Register Link */}
-        <p className="text-center mt-4 text-sm text-gray-600">
-          Don't have an account?{" "}
+        <p className="mt-5 text-center text-sm text-gray-600">
+          Don’t have an account?{" "}
           <Link
             to="/register"
-            className="text-indigo-600 font-medium hover:text-indigo-800"
+            className="font-medium text-indigo-600 transition hover:text-indigo-800"
           >
-            Register
+            Create one
           </Link>
         </p>
       </div>

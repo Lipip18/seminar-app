@@ -1,13 +1,13 @@
 import {
-  Building,
-  Calendar,
-  CreditCard,
-  Home,
-  LogOut,
-  Menu,
-  Settings,
-  Users,
-  X,
+    Building,
+    Calendar,
+    CreditCard,
+    Home,
+    LogOut,
+    Menu,
+    Settings,
+    Users,
+    X,
 } from "lucide-react";
 import { useContext, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -59,7 +59,7 @@ export default function AdminLayout() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-slate-50">
 
       {/* Overlay (mobile) */}
       {mobileMenuOpen && (
@@ -71,7 +71,7 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-slate-200 bg-white shadow-sm transform transition-transform ${
           mobileMenuOpen
             ? "translate-x-0"
             : "-translate-x-full lg:translate-x-0"
@@ -79,10 +79,13 @@ export default function AdminLayout() {
       >
 
         {/* Header */}
-        <div className="p-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-indigo-600">
-            Admin Panel
-          </h2>
+        <div className="flex items-center justify-between border-b border-slate-200 p-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-500">Control center</p>
+            <h2 className="text-xl font-bold text-slate-900">
+              Admin Panel
+            </h2>
+          </div>
 
           <button
             className="lg:hidden"
@@ -94,7 +97,7 @@ export default function AdminLayout() {
 
         {/* User Info */}
         <div className="px-6 pb-4">
-          <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
 
             <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-sm">
               {getInitials(user?.name || "Admin")}
@@ -114,7 +117,7 @@ export default function AdminLayout() {
         </div>
 
         {/* Links */}
-        <nav className="px-4 space-y-1">
+        <nav className="flex-1 space-y-1 px-4 py-4">
           {links.map((link) => (
             <SidebarLink
               key={link.to}
@@ -125,10 +128,10 @@ export default function AdminLayout() {
         </nav>
 
         {/* Logout */}
-        <div className="mt-auto p-4 border-t">
+        <div className="border-t border-slate-200 p-4">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-red-100 text-red-600"
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-red-600 transition hover:bg-red-50"
           >
             <LogOut className="w-5 h-5" />
             Logout
@@ -140,7 +143,7 @@ export default function AdminLayout() {
       <main className="flex-1 lg:ml-64 flex flex-col">
 
         {/* Topbar */}
-        <header className="h-16 bg-white border-b flex items-center justify-between px-6">
+        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm">
 
           <button
             className="lg:hidden"
@@ -149,13 +152,13 @@ export default function AdminLayout() {
             <Menu />
           </button>
 
-          <div className="text-sm text-gray-500 hidden lg:block">
-            {new Date().toDateString()}
+          <div className="hidden text-sm font-medium text-slate-500 lg:block">
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
           </div>
         </header>
 
         {/* Page Content */}
-        <div className="p-6 flex-1">
+        <div className="flex-1 p-6 lg:p-8">
           <Outlet />
         </div>
 

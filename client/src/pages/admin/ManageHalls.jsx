@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 
-const API = "http://localhost:5000/api/halls";
+const API = `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/halls`;
 const AMENITIES_LIST = [
   "Projector", "Whiteboard", "Air Conditioning", "Microphone",
   "Sound System", "WiFi", "Podium", "Video Conferencing",
@@ -67,16 +67,16 @@ const HallModal = ({ mode, hall, onClose, onSave }) => {
     mode === "add"
       ? EMPTY_FORM
       : {
-          name: hall.name || "",
-          capacity: hall.capacity || "",
-          building: hall.location?.building || "",
-          floor: hall.location?.floor || "",
-          roomNumber: hall.location?.roomNumber || "",
-          description: hall.description || "",
-          status: hall.status || "Available",
-          amenities: hall.amenities || [],
-          isActive: hall.isActive ?? true,
-        }
+        name: hall.name || "",
+        capacity: hall.capacity || "",
+        building: hall.location?.building || "",
+        floor: hall.location?.floor || "",
+        roomNumber: hall.location?.roomNumber || "",
+        description: hall.description || "",
+        status: hall.status || "Available",
+        amenities: hall.facilities || hall.amenities || [],
+        isActive: hall.isActive ?? true,
+      }
   );
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -117,6 +117,7 @@ const HallModal = ({ mode, hall, onClose, onSave }) => {
       location: { building: form.building, floor: form.floor, roomNumber: form.roomNumber },
       description: form.description.trim(),
       status: form.status,
+      facilities: form.amenities,
       amenities: form.amenities,
       isActive: form.isActive,
     };
@@ -398,7 +399,8 @@ const ManageHalls = () => {
     const matchStatus = filters.status === "all" || h.status === filters.status;
     const matchActive = filters.isActive === "all" ||
       (filters.isActive === "active" ? h.isActive : !h.isActive);
-    const matchAmenity = filters.amenity === "all" || h.amenities?.includes(filters.amenity);
+    const hallAmenities = h.facilities || h.amenities || [];
+    const matchAmenity = filters.amenity === "all" || hallAmenities.includes(filters.amenity);
     const matchMin = !filters.minCap || h.capacity >= Number(filters.minCap);
     const matchMax = !filters.maxCap || h.capacity <= Number(filters.maxCap);
     return matchSearch && matchStatus && matchActive && matchAmenity && matchMin && matchMax;
@@ -619,16 +621,16 @@ const ManageHalls = () => {
 
                     <td style={{ padding: "12px 14px" }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, maxWidth: 200 }}>
-                        {hall.amenities?.slice(0, 3).map((a) => (
+                        {(hall.facilities || hall.amenities || []).slice(0, 3).map((a) => (
                           <span key={a} style={{
                             fontSize: 11, padding: "2px 7px", borderRadius: 999,
                             background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8",
                           }}>{a}</span>
                         ))}
-                        {hall.amenities?.length > 3 && (
-                          <span style={{ fontSize: 11, color: "#94a3b8" }}>+{hall.amenities.length - 3}</span>
+                        {(hall.facilities || hall.amenities || []).length > 3 && (
+                          <span style={{ fontSize: 11, color: "#94a3b8" }}>+{(hall.facilities || hall.amenities || []).length - 3}</span>
                         )}
-                        {!hall.amenities?.length && <span style={{ fontSize: 12, color: "#cbd5e1" }}>None</span>}
+                        {!((hall.facilities || hall.amenities || []).length) && <span style={{ fontSize: 12, color: "#cbd5e1" }}>None</span>}
                       </div>
                     </td>
 
@@ -680,8 +682,8 @@ const ManageHalls = () => {
                   <tr>
                     <td colSpan={7} style={{ textAlign: "center", padding: "3rem 1rem", color: "#94a3b8" }}>
                       <p style={{ fontSize: 32, margin: "0 0 8px" }}>🏛</p>
-                      <p style={{ margin: 0, fontWeight: 500 }}>No halls found</p>
-                      {hasFilters && <p style={{ margin: "4px 0 0", fontSize: 13 }}>Try adjusting your filters</p>}
+                      <p style={{ margin: 0, fontWeight: 500 }}>No halls match your filters</p>
+                      {hasFilters && <p style={{ margin: "4px 0 0", fontSize: 13 }}>Try clearing a filter or adding a new hall.</p>}
                     </td>
                   </tr>
                 )}

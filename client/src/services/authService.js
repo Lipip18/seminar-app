@@ -26,7 +26,8 @@ const authService = {
 
     return {
       token: res.data.token,
-      user: res.data.user, // ✅ ensure user exists
+      user: res.data.user || res.data.data || null,
+      data: res.data.data || res.data.user || null,
     };
   },
 
@@ -40,7 +41,8 @@ const authService = {
 
     return {
       token: res.data.token,
-      user: res.data.user,
+      user: res.data.user || res.data.data || null,
+      data: res.data.data || res.data.user || null,
     };
   },
 
@@ -58,9 +60,9 @@ const authService = {
   getMe: async () => {
     const res = await api.get('/me');
 
-    // ✅ IMPORTANT: return correct structure
     return {
-      data: res.data.user || res.data, // supports both backend formats
+      data: res.data.data || res.data.user || res.data,
+      user: res.data.data || res.data.user || res.data,
     };
   },
 };

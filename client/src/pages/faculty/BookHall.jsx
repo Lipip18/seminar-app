@@ -1,18 +1,18 @@
 import {
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
 } from "react";
 
 import {
-  useNavigate,
-  useParams,
+    useNavigate,
+    useParams,
 } from "react-router-dom";
 
 import {
-  ChevronLeft,
-  ChevronRight,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -44,6 +44,37 @@ const formatDate = (date) => {
   return new Date(date)
     .toISOString()
     .split("T")[0];
+};
+
+const getHallLocation = (hall) => {
+  if (!hall) return "Main campus";
+
+  const building =
+    hall?.location?.building ||
+    hall?.building ||
+    hall?.location ||
+    "";
+
+  const floor = hall?.location?.floor || hall?.floor;
+
+  return floor && building
+    ? `${building}, Floor ${floor}`
+    : building || "Main campus";
+};
+
+const getHallFacilities = (hall) => {
+  if (!hall) return [];
+
+  const facilities =
+    hall.facilities ||
+    hall.amenities ||
+    [];
+
+  if (Array.isArray(facilities)) {
+    return facilities;
+  }
+
+  return [];
 };
 
 const BookHall = () => {
@@ -106,7 +137,10 @@ const BookHall = () => {
       // ✅ FIX 2: Only show active halls in the dropdown
       // Handle boolean true, number 1, or string "true" from API
       const activeHalls = hallsData.filter(
-        (hall) => hall.isActive === true || hall.isActive === 1 || hall.isActive === "true"
+        (hall) =>
+          hall.isActive !== false &&
+          hall.isActive !== 0 &&
+          hall.isActive !== "false"
       );
 
       setHalls(activeHalls);
@@ -131,6 +165,9 @@ const BookHall = () => {
     if (!selectedHallId) {
       setSelectedHall(null);
       setBookings([]);
+      setSelectedDate("");
+      setSelectedSlot("");
+      setPurpose("");
       return;
     }
 
@@ -390,9 +427,7 @@ const BookHall = () => {
         </h1>
 
         <p className="text-slate-500 mt-2">
-          Select hall, date,
-          time slot and submit
-          booking request
+          Pick a hall, choose a date and slot, then submit your request.
         </p>
       </div>
 
@@ -462,11 +497,8 @@ const BookHall = () => {
                   </h2>
 
                   <p className="text-sm text-slate-500">
-                    {
-                      selectedHall.location
-                        ?.building
-                    }
-                  </p>
+                {getHallLocation(selectedHall)}
+              </p>
                 </div>
               </div>
 
@@ -483,47 +515,38 @@ const BookHall = () => {
                   </p>
 
                   <h3 className="font-semibold text-blue-600 mt-1">
-                    {
-                      selectedHall.capacity
-                    }
+                    {selectedHall.capacity}
                   </h3>
                 </div>
 
                 <div className="bg-slate-50 rounded-xl p-3">
                   <p className="text-xs text-slate-400">
-                    Status
+                    Booking status
                   </p>
 
                   <h3 className="font-semibold text-emerald-600 mt-1">
-                    Available
+                    Available for booking
                   </h3>
                 </div>
               </div>
 
-              {selectedHall
-                .facilities
-                ?.length >
-                0 && (
+              {getHallFacilities(selectedHall).length > 0 && (
                 <div className="mt-5">
                   <p className="text-xs text-slate-400 mb-2">
                     Facilities
                   </p>
 
                   <div className="flex flex-wrap gap-2">
-                    {selectedHall.facilities.map(
+                    {getHallFacilities(selectedHall).map(
                       (
                         facility,
                         i
                       ) => (
                         <span
-                          key={
-                            i
-                          }
+                          key={i}
                           className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium"
                         >
-                          {
-                            facility
-                          }
+                          {facility}
                         </span>
                       )
                     )}
@@ -541,39 +564,42 @@ const BookHall = () => {
             </p>
 
             <div className="space-y-4">
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <span className="text-slate-400 text-sm">
                   Hall
                 </span>
 
-                <span className="text-sm font-medium text-slate-700">
-                  {selectedHall?.name ||
-                    "—"}
+                <span className="text-sm font-medium text-slate-700 text-right">
+                  {selectedHall?.name || "—"}
                 </span>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <span className="text-slate-400 text-sm">
                   Date
                 </span>
 
-                <span className="text-sm font-medium text-slate-700">
-                  {selectedDate ||
-                    "—"}
+                <span className="text-sm font-medium text-slate-700 text-right">
+                  {selectedDate || "—"}
                 </span>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <span className="text-slate-400 text-sm">
                   Time
                 </span>
 
-                <span className="text-sm font-medium text-slate-700">
-                  {selectedSlot ||
-                    "—"}
+                <span className="text-sm font-medium text-slate-700 text-right">
+                  {selectedSlot || "—"}
                 </span>
               </div>
             </div>
+
+            {!selectedHall && (
+              <p className="mt-4 text-sm text-slate-500">
+                Choose a hall to begin the booking flow.
+              </p>
+            )}
           </div>
         </div>
 
@@ -766,14 +792,12 @@ const BookHall = () => {
             </div>
 
             {!selectedDate ? (
-              <div className="h-32 flex items-center justify-center text-slate-400">
-                Select a date to
-                view slots
+              <div className="h-32 flex items-center justify-center text-slate-400 text-center px-4">
+                Select a date to view available slots.
               </div>
             ) : availableTimeSlots.length === 0 ? (
-              // ✅ Edge case: all slots for today have passed
-              <div className="h-32 flex items-center justify-center text-slate-400">
-                No more slots available for today
+              <div className="h-32 flex items-center justify-center text-slate-400 text-center px-4">
+                No available slots remain for this date.
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">

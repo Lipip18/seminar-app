@@ -1,8 +1,4 @@
-import {
-  createContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
 
 import axios from "axios";
 
@@ -31,38 +27,21 @@ export const AuthProvider = ({
 
   /* ───────────────── API INSTANCE ───────────────── */
 
-  const api = axios.create({
-  baseURL:
-    "http://localhost:5000/api",
+ const api = useMemo(() => {
+     const instance = axios.create({
+       baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+       withCredentials: true,
+       headers: { "Content-Type": "application/json" },
+     });
 
-  withCredentials: true,
+     instance.interceptors.request.use((config) => {
+       const savedToken = localStorage.getItem("token");
+       if (savedToken) config.headers.Authorization = `Bearer ${savedToken}`;
+       return config;
+     });
 
-  headers: {
-    "Content-Type":
-      "application/json",
-  },
-});
-
-  // Attach token automatically
-
-  api.interceptors.request.use(
-    (config) => {
-      const savedToken =
-        localStorage.getItem(
-          "token"
-        );
-
-      if (savedToken) {
-
-  console.log("TOKEN SENT =>", savedToken);
-
-  config.headers.Authorization = `Bearer ${savedToken}`;
-}
-
-      return config;
-    }
-  );
-
+     return instance;
+   }, []);
   /* ───────────────── COMPUTED VALUES ───────────────── */
 
   const isAuthenticated = !!user;
@@ -90,7 +69,7 @@ export const AuthProvider = ({
           );
 
           const userData =
-            res.data?.data;
+            res?.data?.data || res?.user || res?.data;
 
           if (!userData) {
             throw new Error(

@@ -587,10 +587,9 @@ const styles = {
     background: "#f8fafc",
     padding: "2rem 1rem",
     display: "flex",
-    justifyContent:
-      "center",
+    justifyContent: "center",
     fontFamily:
-      "'DM Sans', sans-serif",
+      "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   toast: {
@@ -626,21 +625,18 @@ const styles = {
 
   container: {
     width: "100%",
-    maxWidth: 720,
+    maxWidth: 760,
     display: "flex",
-    flexDirection:
-      "column",
+    flexDirection: "column",
     gap: "1rem",
   },
 
   card: {
     background: "#fff",
-    border:
-      "1px solid #e2e8f0",
+    border: "1px solid #e2e8f0",
     borderRadius: 16,
     padding: "1.5rem",
-    boxShadow:
-      "0 1px 2px rgba(0,0,0,0.03)",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
   },
 
   headerRow: {
@@ -769,6 +765,7 @@ const styles = {
     display: "flex",
     gap: 12,
     marginTop: 4,
+    flexWrap: "wrap",
   },
 
   btnPrimary: {

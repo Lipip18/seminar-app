@@ -110,22 +110,22 @@ const HallCard = ({ hall, onView, onBook }) => {
           </div>
           <div style={{ background: C.bg, borderRadius: 12, padding: "0.75rem 0.9rem", border: `1px solid ${C.borderSoft}` }}>
             <p style={{ margin: 0, fontSize: 11, color: C.faint, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Facilities</p>
-            <p style={{ margin: "4px 0 0", fontSize: 18, fontWeight: 800, color: C.text }}>{hall.facilities?.length || 0}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 18, fontWeight: 800, color: C.text }}>{(hall.facilities || hall.amenities || []).length || 0}</p>
           </div>
         </div>
 
         {/* Facility chips */}
-        {hall.facilities?.length > 0 && (
+        {(hall.facilities || hall.amenities || []).length > 0 && (
           <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {hall.facilities.slice(0, 4).map((f, i) => (
+            {(hall.facilities || hall.amenities || []).slice(0, 4).map((f, i) => (
               <span key={i} style={{
                 padding: "4px 10px", borderRadius: 999, background: C.primarySoft,
                 color: C.primary, fontSize: 11.5, fontWeight: 600,
               }}>{f}</span>
             ))}
-            {hall.facilities.length > 4 && (
+            {(hall.facilities || hall.amenities || []).length > 4 && (
               <span style={{ padding: "4px 10px", borderRadius: 999, background: C.bg, color: C.sub, fontSize: 11.5, fontWeight: 600 }}>
-                +{hall.facilities.length - 4} more
+                +{(hall.facilities || hall.amenities || []).length - 4} more
               </span>
             )}
           </div>
@@ -219,15 +219,15 @@ const HallModal = ({ hall, onClose, onBook }) => {
             </div>
             <div style={{ background: C.bg, borderRadius: 12, padding: "0.9rem 1rem", border: `1px solid ${C.borderSoft}` }}>
               <p style={{ margin: 0, fontSize: 11, color: C.faint, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Facilities</p>
-              <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 800, color: C.text }}>{hall.facilities?.length || 0}</p>
+              <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 800, color: C.text }}>{(hall.facilities || hall.amenities || []).length || 0}</p>
             </div>
           </div>
 
-          {hall.facilities?.length > 0 && (
+          {(hall.facilities || hall.amenities || []).length > 0 && (
             <div style={{ marginTop: 22 }}>
               <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#334155" }}>Available facilities</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {hall.facilities.map((f, i) => (
+                {(hall.facilities || hall.amenities || []).map((f, i) => (
                   <span key={i} style={{
                     padding: "7px 12px", borderRadius: 999, background: C.primarySoft,
                     color: C.primary, fontSize: 12.5, fontWeight: 600,
@@ -340,33 +340,50 @@ const ViewHalls = () => {
 
       {/* Header */}
       <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-        flexWrap: "wrap", gap: 14, marginBottom: "1.75rem",
+        marginBottom: "1.5rem",
+        padding: "1.35rem 1.4rem",
+        borderRadius: 24,
+        background: "linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%)",
+        border: `1px solid ${C.border}`,
+        boxShadow: "0 16px 35px -24px rgba(37,99,235,0.35)",
       }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text, letterSpacing: "-0.02em" }}>
-            Available seminar halls
-          </h1>
-          <p style={{ marginTop: 6, color: C.sub, fontSize: 14 }}>
-            Browse halls added by administration and book one for your event
-          </p>
-        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 999, background: "#dbeafe", color: C.primary, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>
+              <span style={{ fontSize: 13 }}>🏛</span>
+              Faculty hall explorer
+            </div>
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text, letterSpacing: "-0.02em" }}>
+              Available seminar halls
+            </h1>
+            <p style={{ marginTop: 6, color: C.sub, fontSize: 14, maxWidth: 560 }}>
+              Browse halls added by administration and choose the right space for your next event.
+            </p>
+          </div>
 
-        <button onClick={() => fetchHalls(true)} disabled={refreshing} style={{
-          height: 42, padding: "0 18px", borderRadius: 10, border: `1px solid ${C.border}`,
-          background: "#fff", cursor: refreshing ? "not-allowed" : "pointer", fontWeight: 600,
-          color: C.text, fontSize: 13.5, display: "flex", alignItems: "center", gap: 8,
-          opacity: refreshing ? 0.6 : 1,
-        }}>
-          <span style={{ display: "inline-block", animation: refreshing ? "spin 0.8s linear infinite" : "none" }}>↻</span>
-          {refreshing ? "Refreshing…" : "Refresh"}
-        </button>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ padding: "10px 12px", borderRadius: 14, background: "#fff", border: `1px solid ${C.borderSoft}`, minWidth: 110 }}>
+              <p style={{ margin: 0, fontSize: 11, color: C.faint, textTransform: "uppercase", fontWeight: 700 }}>Available</p>
+              <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 800, color: C.text }}>{halls.filter((hall) => isAvailable(hall)).length}</p>
+            </div>
+            <button onClick={() => fetchHalls(true)} disabled={refreshing} style={{
+              height: 44, padding: "0 16px", borderRadius: 12, border: `1px solid ${C.border}`,
+              background: "#fff", cursor: refreshing ? "not-allowed" : "pointer", fontWeight: 700,
+              color: C.text, fontSize: 13.5, display: "flex", alignItems: "center", gap: 8,
+              opacity: refreshing ? 0.6 : 1,
+            }}>
+              <span style={{ display: "inline-block", animation: refreshing ? "spin 0.8s linear infinite" : "none" }}>↻</span>
+              {refreshing ? "Refreshing…" : "Refresh"}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
       <div style={{
-        background: "#fff", border: `1px solid ${C.border}`, borderRadius: 16,
+        background: "#fff", border: `1px solid ${C.border}`, borderRadius: 18,
         padding: "1rem", marginBottom: "1.75rem", display: "flex", gap: 12, flexWrap: "wrap",
+        boxShadow: "0 8px 24px -18px rgba(15,23,42,0.22)",
       }}>
         <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
           <span style={{
@@ -401,9 +418,19 @@ const ViewHalls = () => {
       </div>
 
       {/* Results count */}
-      <p style={{ margin: "0 0 1rem", fontSize: 13, color: C.faint }}>
-        {filteredHalls.length} hall{filteredHalls.length !== 1 ? "s" : ""} found
-      </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: "1rem", flexWrap: "wrap" }}>
+        <p style={{ margin: 0, fontSize: 13, color: C.faint }}>
+          {filteredHalls.length} hall{filteredHalls.length !== 1 ? "s" : ""} found
+        </p>
+        {(search || capacityFilter !== "all" || statusFilter !== "all") && (
+          <button
+            onClick={() => { setSearch(""); setCapacityFilter("all"); setStatusFilter("all"); }}
+            style={{ border: `1px solid ${C.border}`, background: "#fff", color: C.sub, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontSize: 12.5, fontWeight: 600 }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
 
       {/* Grid / empty state */}
       {filteredHalls.length === 0 ? (
@@ -412,9 +439,9 @@ const ViewHalls = () => {
           padding: "4rem 2rem", textAlign: "center",
         }}>
           <div style={{ fontSize: 46, marginBottom: 14 }}>🏛</div>
-          <h2 style={{ margin: 0, color: C.text, fontSize: 18 }}>No halls found</h2>
+          <h2 style={{ margin: 0, color: C.text, fontSize: 18 }}>No halls match your filters</h2>
           <p style={{ marginTop: 8, color: C.sub, fontSize: 14 }}>
-            Try adjusting your search or filters
+            Try broadening your search or resetting the status and capacity filters.
           </p>
         </div>
       ) : (

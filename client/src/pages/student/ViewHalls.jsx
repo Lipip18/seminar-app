@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 
 const ViewHalls = () => {
@@ -7,6 +7,9 @@ const ViewHalls = () => {
   const [halls, setHalls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedHall, setSelectedHall] = useState(null);
+  const [search, setSearch] = useState("");
+  const [capacityFilter, setCapacityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     fetchHalls();
@@ -34,11 +37,35 @@ const ViewHalls = () => {
       .slice(0, 2)
       .toUpperCase();
 
+  const filteredHalls = useMemo(() => {
+    return halls.filter((hall) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        !q ||
+        hall.name?.toLowerCase().includes(q) ||
+        hall.location?.building?.toLowerCase().includes(q) ||
+        hall.description?.toLowerCase().includes(q);
+
+      const matchesCapacity =
+        capacityFilter === "all" ||
+        (capacityFilter === "small" && hall.capacity <= 50) ||
+        (capacityFilter === "medium" && hall.capacity > 50 && hall.capacity <= 150) ||
+        (capacityFilter === "large" && hall.capacity > 150);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && hall.isActive !== false) ||
+        (statusFilter === "inactive" && hall.isActive === false);
+
+      return matchesSearch && matchesCapacity && matchesStatus;
+    });
+  }, [halls, search, capacityFilter, statusFilter]);
+
   if (loading) {
     return (
       <div style={styles.loadingPage}>
         <div style={styles.spinner} />
-        <p style={styles.loadingText}>Loading halls...</p>
+        <p style={styles.loadingText}>Loading halls…</p>
       </div>
     );
   }
@@ -46,66 +73,118 @@ const ViewHalls = () => {
   return (
     <div style={styles.page}>
       {/* HEADER */}
-      <div style={styles.header}>
+      <div style={styles.heroCard}>
         <div>
-          <h1 style={styles.title}>Seminar Halls</h1>
+          <div style={styles.heroEyebrow}>Student view</div>
+          <h1 style={styles.title}>Explore seminar halls</h1>
           <p style={styles.subtitle}>
-            Browse all available seminar halls and their facilities
+            Browse available spaces, review facilities, and find the right hall for your event.
           </p>
         </div>
 
-        <div style={styles.countBadge}>
-          {halls.length} Halls
+        <div style={styles.heroStats}>
+          <div style={styles.statCard}>
+            <span style={styles.statLabel}>Available</span>
+            <strong style={styles.statValue}>{halls.filter((hall) => hall.isActive !== false).length}</strong>
+          </div>
+          <div style={styles.statCard}>
+            <span style={styles.statLabel}>Total halls</span>
+            <strong style={styles.statValue}>{halls.length}</strong>
+          </div>
         </div>
+      </div>
+
+      {/* FILTERS */}
+      <div style={styles.toolbar}>
+        <div style={styles.searchBox}>
+          <span style={styles.searchIcon}>⌕</span>
+          <input
+            type="text"
+            placeholder="Search hall or building…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={styles.searchInput}
+          />
+        </div>
+
+        <select
+          value={capacityFilter}
+          onChange={(e) => setCapacityFilter(e.target.value)}
+          style={styles.select}
+        >
+          <option value="all">All capacities</option>
+          <option value="small">Small (≤ 50)</option>
+          <option value="medium">Medium (51–150)</option>
+          <option value="large">Large (150+)</option>
+        </select>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={styles.select}
+        >
+          <option value="all">All status</option>
+          <option value="active">Available</option>
+          <option value="inactive">Unavailable</option>
+        </select>
+      </div>
+
+      <div style={styles.summaryRow}>
+        <span style={styles.summaryText}>
+          Showing {filteredHalls.length} of {halls.length} halls
+        </span>
       </div>
 
       {/* HALL GRID */}
       <div style={styles.grid}>
-        {halls.map((hall) => (
+        {filteredHalls.map((hall) => (
           <div
             key={hall._id}
             style={styles.card}
             onClick={() => setSelectedHall(hall)}
           >
-            {/* TOP */}
             <div style={styles.cardTop}>
               <div style={styles.avatar}>
                 {getInitials(hall.name)}
               </div>
 
-              <div>
-                <h2 style={styles.hallName}>
-                  {hall.name}
-                </h2>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
+                  <h2 style={styles.hallName}>
+                    {hall.name}
+                  </h2>
 
-                <span
-                  style={{
-                    ...styles.status,
-                    background: hall.isActive
-                      ? "#ecfdf5"
-                      : "#fef2f2",
-                    color: hall.isActive
-                      ? "#047857"
-                      : "#b91c1c",
-                    border: hall.isActive
-                      ? "1px solid #a7f3d0"
-                      : "1px solid #fecaca",
-                  }}
-                >
-                  {hall.isActive
-                    ? "Available"
-                    : "Unavailable"}
-                </span>
+                  <span
+                    style={{
+                      ...styles.status,
+                      background: hall.isActive
+                        ? "#ecfdf5"
+                        : "#fef2f2",
+                      color: hall.isActive
+                        ? "#047857"
+                        : "#b91c1c",
+                      border: hall.isActive
+                        ? "1px solid #a7f3d0"
+                        : "1px solid #fecaca",
+                    }}
+                  >
+                    {hall.isActive
+                      ? "Available"
+                      : "Unavailable"}
+                  </span>
+                </div>
+
+                <p style={styles.location}>
+                  {hall.location?.building || "Campus building"}
+                </p>
               </div>
             </div>
 
-            {/* DESCRIPTION */}
             <p style={styles.description}>
               {hall.description ||
                 "No description available"}
             </p>
 
-            {/* DETAILS */}
             <div style={styles.infoRow}>
               <div style={styles.infoCard}>
                 <p style={styles.infoLabel}>
@@ -126,10 +205,9 @@ const ViewHalls = () => {
               </div>
             </div>
 
-            {/* FACILITIES */}
-            {hall.facilities?.length > 0 && (
+            {(hall.facilities || hall.amenities || []).length > 0 && (
               <div style={styles.facilitiesWrap}>
-                {hall.facilities
+                {(hall.facilities || hall.amenities || [])
                   .slice(0, 4)
                   .map((facility, index) => (
                     <span
@@ -140,15 +218,14 @@ const ViewHalls = () => {
                     </span>
                   ))}
 
-                {hall.facilities.length > 4 && (
+                {(hall.facilities || hall.amenities || []).length > 4 && (
                   <span style={styles.moreFacility}>
-                    +{hall.facilities.length - 4}
+                    +{(hall.facilities || hall.amenities || []).length - 4}
                   </span>
                 )}
               </div>
             )}
 
-            {/* BUTTON */}
             <button style={styles.viewBtn}>
               View Details
             </button>
@@ -157,7 +234,7 @@ const ViewHalls = () => {
       </div>
 
       {/* EMPTY STATE */}
-      {!loading && halls.length === 0 && (
+      {!loading && filteredHalls.length === 0 && (
         <div style={styles.emptyState}>
           <svg
             width="60"
@@ -175,12 +252,13 @@ const ViewHalls = () => {
           </svg>
 
           <h3 style={styles.emptyTitle}>
-            No halls available
+            {halls.length === 0 ? "No halls available right now" : "No halls match the current filters"}
           </h3>
 
           <p style={styles.emptyText}>
-            There are currently no seminar halls
-            added to the system.
+            {halls.length === 0
+              ? "There are currently no seminar halls added to the system."
+              : "Try adjusting the search or filter options to see more halls."}
           </p>
         </div>
       )}
@@ -268,9 +346,8 @@ const ViewHalls = () => {
                 </p>
 
                 <div style={styles.modalFacilities}>
-                  {selectedHall.facilities?.length >
-                  0 ? (
-                    selectedHall.facilities.map(
+                  {(selectedHall.facilities || selectedHall.amenities || []).length > 0 ? (
+                    (selectedHall.facilities || selectedHall.amenities || []).map(
                       (facility, index) => (
                         <span
                           key={index}
@@ -330,36 +407,139 @@ const styles = {
     fontWeight: 500,
   },
 
-  header: {
+  heroCard: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "2rem",
-    gap: 12,
+    marginBottom: "1.5rem",
+    gap: 16,
     flexWrap: "wrap",
+    padding: "1.4rem 1.5rem",
+    borderRadius: 24,
+    background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
+    color: "#fff",
+    boxShadow: "0 18px 40px -24px rgba(37,99,235,0.45)",
+  },
+
+  heroEyebrow: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "6px 10px",
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.18)",
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    marginBottom: 8,
   },
 
   title: {
     margin: 0,
     fontSize: 30,
     fontWeight: 700,
-    color: "#0f172a",
+    color: "#fff",
   },
 
   subtitle: {
     marginTop: 6,
     fontSize: 14,
-    color: "#64748b",
+    color: "rgba(255,255,255,0.85)",
+    maxWidth: 560,
   },
 
-  countBadge: {
-    background: "#eff6ff",
-    color: "#2563eb",
-    border: "1px solid #bfdbfe",
-    padding: "10px 16px",
-    borderRadius: 999,
-    fontSize: 13,
+  heroStats: {
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+
+  statCard: {
+    background: "rgba(255,255,255,0.16)",
+    backdropFilter: "blur(8px)",
+    border: "1px solid rgba(255,255,255,0.24)",
+    borderRadius: 16,
+    padding: "10px 12px",
+    minWidth: 110,
+  },
+
+  statLabel: {
+    display: "block",
+    fontSize: 11,
     fontWeight: 700,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.77)",
+  },
+
+  statValue: {
+    display: "block",
+    marginTop: 4,
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#fff",
+  },
+
+  toolbar: {
+    display: "flex",
+    gap: 12,
+    flexWrap: "wrap",
+    marginBottom: "1rem",
+    padding: "1rem",
+    borderRadius: 18,
+    background: "#fff",
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 10px 24px -18px rgba(15,23,42,0.24)",
+  },
+
+  searchBox: {
+    position: "relative",
+    flex: 1,
+    minWidth: 240,
+  },
+
+  searchIcon: {
+    position: "absolute",
+    left: 14,
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#94a3b8",
+    fontSize: 15,
+    pointerEvents: "none",
+  },
+
+  searchInput: {
+    width: "100%",
+    height: 44,
+    padding: "0 14px 0 36px",
+    borderRadius: 10,
+    border: "1px solid #e2e8f0",
+    outline: "none",
+    background: "#fff",
+    fontSize: 14,
+    color: "#334155",
+    boxSizing: "border-box",
+  },
+
+  select: {
+    height: 44,
+    padding: "0 14px",
+    borderRadius: 10,
+    border: "1px solid #e2e8f0",
+    background: "#fff",
+    outline: "none",
+    fontSize: 14,
+    color: "#334155",
+    cursor: "pointer",
+  },
+
+  summaryRow: {
+    marginBottom: "1.25rem",
+  },
+
+  summaryText: {
+    fontSize: 13,
+    color: "#64748b",
+    fontWeight: 600,
   },
 
   grid: {
@@ -372,13 +552,14 @@ const styles = {
   card: {
     background: "#fff",
     border: "1px solid #e2e8f0",
-    borderRadius: 20,
-    padding: "1.5rem",
+    borderRadius: 22,
+    padding: "1.4rem",
     cursor: "pointer",
-    transition: "0.2s",
+    transition: "0.2s ease",
     display: "flex",
     flexDirection: "column",
-    gap: 18,
+    gap: 16,
+    boxShadow: "0 12px 30px -20px rgba(15,23,42,0.24)",
   },
 
   cardTop: {
@@ -406,6 +587,13 @@ const styles = {
     fontSize: 20,
     fontWeight: 700,
     color: "#0f172a",
+  },
+
+  location: {
+    margin: "4px 0 0",
+    color: "#64748b",
+    fontSize: 13,
+    fontWeight: 500,
   },
 
   status: {

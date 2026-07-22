@@ -1,11 +1,14 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
       {/* Hero Section */}
-      <h1 className="text-5xl md:text-7xl font-bold mb-6 mt-12 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+      <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700">
+        <span>✨</span>
+        Campus coordination made simple
+      </div>
+      <h1 className="text-5xl md:text-7xl font-bold mb-6 mt-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
         Seminar Hall Management System
       </h1>
       <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mb-12">

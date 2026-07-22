@@ -1,5 +1,16 @@
 const mongoose = require('mongoose');
 
+const facilityOptions = [
+  'Projector',
+  'Whiteboard',
+  'Air Conditioning',
+  'Microphone',
+  'Sound System',
+  'WiFi',
+  'Podium',
+  'Video Conferencing',
+];
+
 const HallSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -20,19 +31,17 @@ const HallSchema = new mongoose.Schema({
     required: [true, 'Please add the hall capacity'],
   },
 
+  facilities: [
+    {
+      type: String,
+      enum: facilityOptions,
+    },
+  ],
+
   amenities: [
     {
       type: String,
-      enum: [
-        'Projector',
-        'Whiteboard',
-        'Air Conditioning',
-        'Microphone',
-        'Sound System',
-        'WiFi',
-        'Podium',
-        'Video Conferencing',
-      ],
+      enum: facilityOptions,
     },
   ],
 

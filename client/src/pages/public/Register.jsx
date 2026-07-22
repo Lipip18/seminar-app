@@ -49,7 +49,7 @@ export default function Register() {
 
       console.log('REGISTER RESPONSE:', res);
 
-      const userRole = res.user.role?.toLowerCase();
+      const userRole = res.role?.toLowerCase();
 
       if (userRole === 'faculty') {
         navigate('/faculty/dashboard');
@@ -65,15 +65,16 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-6 bg-background">
-      <div className="glass-panel w-full max-w-2xl p-8 md:p-10 bg-white border border-gray-200 shadow-xl">
-        <h2 className="text-3xl font-heading font-bold text-center text-gray-900 mb-2">
-          Create Account
-        </h2>
-
-        <p className="text-gray-500 text-center mb-8">
-          Join the platform as a Faculty or Student
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 sm:px-6">
+      <div className="glass-panel w-full max-w-2xl border border-gray-200 bg-white p-8 shadow-xl md:p-10">
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-heading font-bold text-gray-900">
+            Create your account
+          </h2>
+          <p className="mt-2 text-gray-500">
+            Join the platform as a faculty member or student.
+          </p>
+        </div>
 
         <form
           onSubmit={onSubmit}
@@ -89,7 +90,7 @@ export default function Register() {
               name="name"
               value={name}
               onChange={onChange}
-              className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary transition-all outline-none text-gray-900"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 outline-none transition-all focus:border-secondary"
               required
             />
           </div>
@@ -104,7 +105,7 @@ export default function Register() {
               name="email"
               value={email}
               onChange={onChange}
-              className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary transition-all outline-none text-gray-900"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 outline-none transition-all focus:border-secondary"
               required
             />
           </div>
@@ -121,7 +122,7 @@ export default function Register() {
                 name="password"
                 value={password}
                 onChange={onChange}
-                className="w-full p-3 pr-12 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary transition-all outline-none text-gray-900"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 pr-12 text-gray-900 outline-none transition-all focus:border-secondary"
                 required
                 minLength="6"
               />
@@ -152,7 +153,7 @@ export default function Register() {
                 name="confirmPassword"
                 value={confirmPassword}
                 onChange={onChange}
-                className="w-full p-3 pr-12 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary transition-all outline-none text-gray-900"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 pr-12 text-gray-900 outline-none transition-all focus:border-secondary"
                 required
                 minLength="6"
               />
@@ -182,7 +183,7 @@ export default function Register() {
               name="role"
               value={role}
               onChange={onChange}
-              className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary transition-all appearance-none outline-none text-gray-900"
+              className="w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 outline-none transition-all focus:border-secondary"
             >
               <option value="Student">Student</option>
               <option value="Faculty">Faculty</option>
@@ -199,7 +200,7 @@ export default function Register() {
               name="department"
               value={department}
               onChange={onChange}
-              className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary transition-all outline-none text-gray-900"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 outline-none transition-all focus:border-secondary"
               required
             />
           </div>
@@ -214,7 +215,7 @@ export default function Register() {
               name="phone"
               value={phone}
               onChange={onChange}
-              className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-secondary transition-all outline-none text-gray-900"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-900 outline-none transition-all focus:border-secondary"
             />
           </div>
 
@@ -222,20 +223,20 @@ export default function Register() {
           <div className="col-span-2 mt-4">
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-secondary text-white font-bold tracking-wide hover:bg-secondary/90 transition-all shadow-md transform hover:-translate-y-[1px]"
+              className="w-full rounded-xl bg-secondary py-3 font-bold tracking-wide text-white shadow-md transition-all hover:-translate-y-[1px] hover:bg-secondary/90"
             >
               REGISTER
             </button>
           </div>
         </form>
 
-        <div className="text-center mt-6 text-sm text-gray-600">
+        <div className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
           <Link
             to="/login"
-            className="text-secondary hover:text-primary transition-colors font-semibold"
+            className="font-semibold text-secondary transition-colors hover:text-primary"
           >
-            Login here
+            Sign in here
           </Link>
         </div>
       </div>

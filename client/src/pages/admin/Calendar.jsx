@@ -2,9 +2,9 @@ import axios from "axios";
 import moment from "moment";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Calendar as BigCalendar,
-  momentLocalizer,
-  Views,
+    Calendar as BigCalendar,
+    momentLocalizer,
+    Views,
 } from "react-big-calendar";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -68,6 +68,28 @@ const getHallColor = (hallName) => {
 
   return hallColorMap[hallName];
 };
+
+const getBookingHall = (booking) =>
+  booking?.hall?.name ||
+  booking?.hallId?.name ||
+  booking?.hallName ||
+  "Seminar Hall";
+
+const getBookingUser = (booking) =>
+  booking?.user?.name ||
+  booking?.userId?.name ||
+  booking?.bookedBy ||
+  "User";
+
+const getBookingPurpose = (booking) =>
+  booking?.purpose ||
+  "No purpose provided";
+
+const getBookingLocation = (booking) =>
+  booking?.hall?.location?.building ||
+  booking?.hallId?.location?.building ||
+  booking?.location?.building ||
+  "Main campus";
 
 const Calendar = () => {
   const [events, setEvents] =

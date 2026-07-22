@@ -1,20 +1,42 @@
 import {
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
 } from "react";
 
 import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Clock3,
-  MapPin,
-  User,
+    CalendarDays,
+    ChevronLeft,
+    ChevronRight,
+    Clock3,
+    MapPin,
+    User,
 } from "lucide-react";
 
 import { AuthContext } from "../../context/AuthContext";
+
+const getBookingHall = (booking) =>
+  booking?.hall?.name ||
+  booking?.hallId?.name ||
+  booking?.hallName ||
+  "Seminar Hall";
+
+const getBookingUser = (booking) =>
+  booking?.user?.name ||
+  booking?.userId?.name ||
+  booking?.bookedBy ||
+  "User";
+
+const getBookingPurpose = (booking) =>
+  booking?.purpose ||
+  "No purpose provided";
+
+const getBookingLocation = (booking) =>
+  booking?.hall?.location?.building ||
+  booking?.hallId?.location?.building ||
+  booking?.location?.building ||
+  "Main campus";
 
 const Calendar = () => {
   const { api } =
@@ -521,28 +543,18 @@ const Calendar = () => {
                       className="border border-slate-200 rounded-2xl p-4 bg-slate-50"
                     >
                       <h3 className="font-semibold text-slate-800 text-lg">
-                        {
-                          booking
-                            .hallId
-                            ?.name
-                        }
+                        {getBookingHall(booking)}
                       </h3>
 
                       <p className="text-sm text-slate-500 mt-1">
-                        {
-                          booking.purpose
-                        }
+                        {getBookingPurpose(booking)}
                       </p>
 
                       <div className="mt-4 space-y-3 text-sm text-slate-600">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4" />
 
-                          {
-                            booking
-                              .userId
-                              ?.name
-                          }
+                          {getBookingUser(booking)}
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -560,12 +572,7 @@ const Calendar = () => {
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
 
-                          {
-                            booking
-                              .hallId
-                              ?.location
-                              ?.building
-                          }
+                          {getBookingLocation(booking)}
                         </div>
                       </div>
                     </div>
@@ -615,28 +622,18 @@ const Calendar = () => {
                 >
                   <div>
                     <h3 className="font-semibold text-slate-800">
-                      {
-                        booking
-                          .hallId
-                          ?.name
-                      }
+                      {getBookingHall(booking)}
                     </h3>
 
                     <p className="text-sm text-slate-500 mt-1">
-                      {
-                        booking.purpose
-                      }
+                      {getBookingPurpose(booking)}
                     </p>
 
                     <div className="flex items-center gap-4 mt-3 text-sm text-slate-500">
                       <span className="flex items-center gap-1">
                         <User className="w-4 h-4" />
 
-                        {
-                          booking
-                            .userId
-                            ?.name
-                        }
+                        {getBookingUser(booking)}
                       </span>
 
                       <span className="px-2 py-1 rounded-lg bg-green-50 text-green-600 text-xs font-medium">

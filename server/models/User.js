@@ -28,7 +28,7 @@ const UserSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['admin', 'faculty', 'student'],
-    default: 'student', // ✅ FIXED (was "Student")
+    default: 'student',
   },
   department: {
     type: String,
@@ -37,6 +37,14 @@ const UserSchema = new mongoose.Schema({
   phone: {
     type: String,
     maxlength: 20,
+  },
+  profilePhoto: {
+    type: String,
+    default: '',
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
   },
   createdAt: {
     type: Date,

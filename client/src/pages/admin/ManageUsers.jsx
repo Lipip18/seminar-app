@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 
-const API = "http://localhost:5000/api/users";
+const API = `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/users`;
 const token = () => localStorage.getItem("token");
 const authHeader = () => ({ Authorization: `Bearer ${token()}` });
 
@@ -255,7 +255,7 @@ const ManageUsers = () => {
   /* Actions */
   const handleRoleSave = async (id, role) => {
     try {
-      await axios.patch(`${API}/${id}/role`, { role }, { headers: authHeader() });
+      await axios.put(`${API}/${id}`, { role }, { headers: authHeader() });
       showToast("Role updated successfully!");
       setModal(null);
       fetchUsers();

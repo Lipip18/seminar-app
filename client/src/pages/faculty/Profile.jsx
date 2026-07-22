@@ -562,10 +562,9 @@ const styles = {
     background: "#f8fafc",
     padding: "2rem 1rem",
     display: "flex",
-    justifyContent:
-      "center",
+    justifyContent: "center",
     fontFamily:
-      "'DM Sans', sans-serif",
+      "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   toast: {
@@ -601,10 +600,9 @@ const styles = {
 
   container: {
     width: "100%",
-    maxWidth: 720,
+    maxWidth: 760,
     display: "flex",
-    flexDirection:
-      "column",
+    flexDirection: "column",
     gap: "1rem",
   },
 
@@ -744,6 +742,7 @@ const styles = {
     display: "flex",
     gap: 12,
     marginTop: 4,
+    flexWrap: "wrap",
   },
 
   btnPrimary: {

@@ -220,7 +220,7 @@ const HallDetails = () => {
                 <h3
                   className="text-3xl font-bold text-slate-900 mt-3"
                 >
-                  {hall.facilities?.length || 0}
+                  {(hall.facilities || hall.amenities || []).length || 0}
                 </h3>
               </div>
             </div>
@@ -234,11 +234,11 @@ const HallDetails = () => {
                 Available Facilities
               </h2>
 
-              {hall.facilities?.length > 0 ? (
+              {(hall.facilities || hall.amenities || []).length > 0 ? (
                 <div
                   className="flex flex-wrap gap-4 mt-5"
                 >
-                  {hall.facilities.map(
+                  {(hall.facilities || hall.amenities || []).map(
                     (facility, index) => (
                       <span
                         key={index}
