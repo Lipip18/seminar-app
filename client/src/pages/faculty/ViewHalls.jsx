@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AuthContext } from "../../context/AuthContext";
 
-/* ── shared tokens ───────────────────────────────────────────── */
+/* ── shared tokens (unchanged palette) ──────────────────────── */
 const C = {
   bg: "#f8fafc",
   card: "#ffffff",
@@ -56,6 +56,7 @@ const Badge = ({ ok, children }) => (
 const HallCard = ({ hall, onView, onBook }) => {
   const [hovered, setHovered] = useState(false);
   const available = isAvailable(hall);
+  const facilities = hall.facilities || hall.amenities || [];
 
   return (
     <div
@@ -63,7 +64,9 @@ const HallCard = ({ hall, onView, onBook }) => {
       onMouseLeave={() => setHovered(false)}
       style={{
         background: C.card, borderRadius: 18, overflow: "hidden",
-        border: `1px solid ${C.border}`, display: "flex", flexDirection: "column",
+        border: `1px solid ${available ? C.border : C.borderSoft}`,
+        display: "flex", flexDirection: "column", height: "100%",
+        opacity: available ? 1 : 0.92,
         boxShadow: hovered ? "0 12px 28px -12px rgba(15,23,42,0.18)" : "0 1px 3px rgba(15,23,42,0.04)",
         transform: hovered ? "translateY(-3px)" : "translateY(0)",
         transition: "box-shadow 0.25s ease, transform 0.25s ease",
@@ -71,33 +74,38 @@ const HallCard = ({ hall, onView, onBook }) => {
     >
       {/* Banner */}
       <div style={{
-        height: 148, position: "relative",
-        background: `linear-gradient(135deg, ${C.primary}, ${C.violet})`,
+        height: 148, position: "relative", flexShrink: 0,
+        background: available
+          ? `linear-gradient(135deg, ${C.primary}, ${C.violet})`
+          : `linear-gradient(135deg, #94a3b8, #64748b)`,
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         <div style={{
           position: "absolute", inset: 0, opacity: 0.15,
           backgroundImage: "radial-gradient(circle at 20% 20%, #fff 0, transparent 40%), radial-gradient(circle at 85% 75%, #fff 0, transparent 35%)",
         }} />
-        <HallGlyph size={54} />
+        <HallGlyph size={54} muted={!available} />
         <div style={{ position: "absolute", top: 14, right: 14 }}>
           <Badge ok={available}>{available ? "Available" : "Unavailable"}</Badge>
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content — consistent vertical rhythm so every card lines up */}
       <div style={{ padding: "1.35rem", display: "flex", flexDirection: "column", flex: 1 }}>
-        <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: C.text, letterSpacing: "-0.01em" }}>
-          {hall.name}
-        </h2>
-        <p style={{ margin: "4px 0 0", fontSize: 13, color: C.sub, display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ fontSize: 13 }}>📍</span>
-          {hall.location?.building || "Campus Building"}
-        </p>
+        <div style={{ minHeight: 56 }}>
+          <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: C.text, letterSpacing: "-0.01em" }}>
+            {hall.name}
+          </h2>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: C.sub, display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 13 }}>📍</span>
+            {hall.location?.building || "Campus Building"}
+          </p>
+        </div>
 
         <p style={{
           margin: "14px 0 0", fontSize: 13.5, lineHeight: 1.65, color: "#475569",
           display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          minHeight: 44,
         }}>
           {hall.description || "Seminar hall available for workshops, academic events and presentations."}
         </p>
@@ -110,26 +118,24 @@ const HallCard = ({ hall, onView, onBook }) => {
           </div>
           <div style={{ background: C.bg, borderRadius: 12, padding: "0.75rem 0.9rem", border: `1px solid ${C.borderSoft}` }}>
             <p style={{ margin: 0, fontSize: 11, color: C.faint, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Facilities</p>
-            <p style={{ margin: "4px 0 0", fontSize: 18, fontWeight: 800, color: C.text }}>{(hall.facilities || hall.amenities || []).length || 0}</p>
+            <p style={{ margin: "4px 0 0", fontSize: 18, fontWeight: 800, color: C.text }}>{facilities.length || 0}</p>
           </div>
         </div>
 
-        {/* Facility chips */}
-        {(hall.facilities || hall.amenities || []).length > 0 && (
-          <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {(hall.facilities || hall.amenities || []).slice(0, 4).map((f, i) => (
-              <span key={i} style={{
-                padding: "4px 10px", borderRadius: 999, background: C.primarySoft,
-                color: C.primary, fontSize: 11.5, fontWeight: 600,
-              }}>{f}</span>
-            ))}
-            {(hall.facilities || hall.amenities || []).length > 4 && (
-              <span style={{ padding: "4px 10px", borderRadius: 999, background: C.bg, color: C.sub, fontSize: 11.5, fontWeight: 600 }}>
-                +{(hall.facilities || hall.amenities || []).length - 4} more
-              </span>
-            )}
-          </div>
-        )}
+        {/* Facility chips — reserve the row even when empty, so footers align */}
+        <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6, minHeight: 26 }}>
+          {facilities.slice(0, 4).map((f, i) => (
+            <span key={i} style={{
+              padding: "4px 10px", borderRadius: 999, background: C.primarySoft,
+              color: C.primary, fontSize: 11.5, fontWeight: 600,
+            }}>{f}</span>
+          ))}
+          {facilities.length > 4 && (
+            <span style={{ padding: "4px 10px", borderRadius: 999, background: C.bg, color: C.sub, fontSize: 11.5, fontWeight: 600 }}>
+              +{facilities.length - 4} more
+            </span>
+          )}
+        </div>
 
         {/* Spacer pushes footer down for equal card heights */}
         <div style={{ flex: 1 }} />
@@ -165,6 +171,7 @@ const HallCard = ({ hall, onView, onBook }) => {
 /* ── details modal ──────────────────────────────────────────── */
 const HallModal = ({ hall, onClose, onBook }) => {
   const available = isAvailable(hall);
+  const facilities = hall.facilities || hall.amenities || [];
   return (
     <div
       onClick={onClose}
@@ -219,15 +226,15 @@ const HallModal = ({ hall, onClose, onBook }) => {
             </div>
             <div style={{ background: C.bg, borderRadius: 12, padding: "0.9rem 1rem", border: `1px solid ${C.borderSoft}` }}>
               <p style={{ margin: 0, fontSize: 11, color: C.faint, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Facilities</p>
-              <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 800, color: C.text }}>{(hall.facilities || hall.amenities || []).length || 0}</p>
+              <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 800, color: C.text }}>{facilities.length || 0}</p>
             </div>
           </div>
 
-          {(hall.facilities || hall.amenities || []).length > 0 && (
+          {facilities.length > 0 && (
             <div style={{ marginTop: 22 }}>
               <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#334155" }}>Available facilities</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {(hall.facilities || hall.amenities || []).map((f, i) => (
+                {facilities.map((f, i) => (
                   <span key={i} style={{
                     padding: "7px 12px", borderRadius: 999, background: C.primarySoft,
                     color: C.primary, fontSize: 12.5, fontWeight: 600,
@@ -269,7 +276,10 @@ const ViewHalls = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedHall, setSelectedHall] = useState(null);
 
-  useEffect(() => { fetchHalls(); }, [api]);
+  useEffect(() => {
+    fetchHalls();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api]);
 
   const fetchHalls = async (silent = false) => {
     try {
@@ -285,7 +295,7 @@ const ViewHalls = () => {
   };
 
   const filteredHalls = useMemo(() => {
-    return halls.filter((hall) => {
+    const filtered = halls.filter((hall) => {
       const q = search.toLowerCase();
       const matchesSearch =
         !q ||
@@ -305,7 +315,16 @@ const ViewHalls = () => {
 
       return matchesSearch && matchesCapacity && matchesStatus;
     });
+
+    // Available halls surface first; within each group, keep API order stable.
+    return [...filtered].sort((a, b) => {
+      const aOk = isAvailable(a) ? 0 : 1;
+      const bOk = isAvailable(b) ? 0 : 1;
+      return aOk - bOk;
+    });
   }, [halls, search, capacityFilter, statusFilter]);
+
+  const availableCount = useMemo(() => halls.filter((hall) => isAvailable(hall)).length, [halls]);
 
   const handleBookHall = (hallId) => navigate(`/faculty/book-hall/${hallId}`);
 
@@ -338,124 +357,137 @@ const ViewHalls = () => {
     }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-      {/* Header */}
-      <div style={{
-        marginBottom: "1.5rem",
-        padding: "1.35rem 1.4rem",
-        borderRadius: 24,
-        background: "linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%)",
-        border: `1px solid ${C.border}`,
-        boxShadow: "0 16px 35px -24px rgba(37,99,235,0.35)",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
-          <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 999, background: "#dbeafe", color: C.primary, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>
-              <span style={{ fontSize: 13 }}>🏛</span>
-              Faculty hall explorer
+      {/* Page container keeps every section on one shared max-width and left edge */}
+      <div style={{ maxWidth: 1240, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div style={{
+          marginBottom: "1.5rem",
+          padding: "1.35rem 1.4rem",
+          borderRadius: 24,
+          background: "linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%)",
+          border: `1px solid ${C.border}`,
+          boxShadow: "0 16px 35px -24px rgba(37,99,235,0.35)",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+            <div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 999, background: "#dbeafe", color: C.primary, fontSize: 12, fontWeight: 700, marginBottom: 10 }}>
+                <span style={{ fontSize: 13 }}>🏛</span>
+                Faculty hall explorer
+              </div>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text, letterSpacing: "-0.02em" }}>
+                Available seminar halls
+              </h1>
+              <p style={{ marginTop: 6, color: C.sub, fontSize: 14, maxWidth: 560 }}>
+                Browse halls added by administration and choose the right space for your next event.
+              </p>
             </div>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text, letterSpacing: "-0.02em" }}>
-              Available seminar halls
-            </h1>
-            <p style={{ marginTop: 6, color: C.sub, fontSize: 14, maxWidth: 560 }}>
-              Browse halls added by administration and choose the right space for your next event.
+
+            <div style={{ display: "flex", alignItems: "stretch", gap: 10, flexWrap: "wrap" }}>
+              <div style={{
+                padding: "10px 16px", borderRadius: 14, background: "#fff", border: `1px solid ${C.borderSoft}`,
+                minWidth: 110, display: "flex", flexDirection: "column", justifyContent: "center",
+              }}>
+                <p style={{ margin: 0, fontSize: 11, color: C.faint, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Available</p>
+                <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 800, color: C.green }}>{availableCount} of {halls.length}</p>
+              </div>
+              <button onClick={() => fetchHalls(true)} disabled={refreshing} style={{
+                height: "auto", padding: "0 16px", borderRadius: 12, border: `1px solid ${C.border}`,
+                background: "#fff", cursor: refreshing ? "not-allowed" : "pointer", fontWeight: 700,
+                color: C.text, fontSize: 13.5, display: "flex", alignItems: "center", gap: 8,
+                opacity: refreshing ? 0.6 : 1,
+              }}>
+                <span style={{ display: "inline-block", animation: refreshing ? "spin 0.8s linear infinite" : "none" }}>↻</span>
+                {refreshing ? "Refreshing…" : "Refresh"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div style={{
+          background: "#fff", border: `1px solid ${C.border}`, borderRadius: 18,
+          padding: "1rem", marginBottom: "1.75rem", display: "flex", gap: 12, flexWrap: "wrap",
+          boxShadow: "0 8px 24px -18px rgba(15,23,42,0.22)",
+        }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
+            <span style={{
+              position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+              color: C.faint, fontSize: 15, pointerEvents: "none",
+            }}>⌕</span>
+            <input
+              type="text"
+              placeholder="Search hall or building…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: "100%", height: 44, padding: "0 14px 0 36px", borderRadius: 10,
+                border: `1px solid ${C.border}`, outline: "none", fontSize: 14,
+                background: "#fff", boxSizing: "border-box", color: "#334155",
+              }}
+            />
+          </div>
+
+          <select value={capacityFilter} onChange={(e) => setCapacityFilter(e.target.value)} style={selectStyle}>
+            <option value="all">All capacities</option>
+            <option value="small">Small (≤ 50)</option>
+            <option value="medium">Medium (51–150)</option>
+            <option value="large">Large (150+)</option>
+          </select>
+
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
+            <option value="all">All status</option>
+            <option value="active">Available</option>
+            <option value="inactive">Unavailable</option>
+          </select>
+        </div>
+
+        {/* Results count */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: "1rem", flexWrap: "wrap" }}>
+          <p style={{ margin: 0, fontSize: 13, color: C.faint }}>
+            {filteredHalls.length} hall{filteredHalls.length !== 1 ? "s" : ""} found
+          </p>
+          {(search || capacityFilter !== "all" || statusFilter !== "all") && (
+            <button
+              onClick={() => { setSearch(""); setCapacityFilter("all"); setStatusFilter("all"); }}
+              style={{ border: `1px solid ${C.border}`, background: "#fff", color: C.sub, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontSize: 12.5, fontWeight: 600 }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        {/* Grid / empty state — equal-height rows so every card lines up cleanly */}
+        {filteredHalls.length === 0 ? (
+          <div style={{
+            background: "#fff", borderRadius: 18, border: `1px solid ${C.border}`,
+            padding: "4rem 2rem", textAlign: "center",
+          }}>
+            <div style={{ fontSize: 46, marginBottom: 14 }}>🏛</div>
+            <h2 style={{ margin: 0, color: C.text, fontSize: 18 }}>No halls match your filters</h2>
+            <p style={{ marginTop: 8, color: C.sub, fontSize: 14 }}>
+              Try broadening your search or resetting the status and capacity filters.
             </p>
           </div>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <div style={{ padding: "10px 12px", borderRadius: 14, background: "#fff", border: `1px solid ${C.borderSoft}`, minWidth: 110 }}>
-              <p style={{ margin: 0, fontSize: 11, color: C.faint, textTransform: "uppercase", fontWeight: 700 }}>Available</p>
-              <p style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 800, color: C.text }}>{halls.filter((hall) => isAvailable(hall)).length}</p>
-            </div>
-            <button onClick={() => fetchHalls(true)} disabled={refreshing} style={{
-              height: 44, padding: "0 16px", borderRadius: 12, border: `1px solid ${C.border}`,
-              background: "#fff", cursor: refreshing ? "not-allowed" : "pointer", fontWeight: 700,
-              color: C.text, fontSize: 13.5, display: "flex", alignItems: "center", gap: 8,
-              opacity: refreshing ? 0.6 : 1,
-            }}>
-              <span style={{ display: "inline-block", animation: refreshing ? "spin 0.8s linear infinite" : "none" }}>↻</span>
-              {refreshing ? "Refreshing…" : "Refresh"}
-            </button>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gridAutoRows: "1fr",
+            gap: 20,
+          }}>
+            {filteredHalls.map((hall) => (
+              <HallCard
+                key={hall._id}
+                hall={hall}
+                onView={setSelectedHall}
+                onBook={handleBookHall}
+              />
+            ))}
           </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div style={{
-        background: "#fff", border: `1px solid ${C.border}`, borderRadius: 18,
-        padding: "1rem", marginBottom: "1.75rem", display: "flex", gap: 12, flexWrap: "wrap",
-        boxShadow: "0 8px 24px -18px rgba(15,23,42,0.22)",
-      }}>
-        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
-          <span style={{
-            position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-            color: C.faint, fontSize: 15, pointerEvents: "none",
-          }}>⌕</span>
-          <input
-            type="text"
-            placeholder="Search hall or building…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: "100%", height: 44, padding: "0 14px 0 36px", borderRadius: 10,
-              border: `1px solid ${C.border}`, outline: "none", fontSize: 14,
-              background: "#fff", boxSizing: "border-box", color: "#334155",
-            }}
-          />
-        </div>
-
-        <select value={capacityFilter} onChange={(e) => setCapacityFilter(e.target.value)} style={selectStyle}>
-          <option value="all">All capacities</option>
-          <option value="small">Small (≤ 50)</option>
-          <option value="medium">Medium (51–150)</option>
-          <option value="large">Large (150+)</option>
-        </select>
-
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
-          <option value="all">All status</option>
-          <option value="active">Available</option>
-          <option value="inactive">Unavailable</option>
-        </select>
-      </div>
-
-      {/* Results count */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: "1rem", flexWrap: "wrap" }}>
-        <p style={{ margin: 0, fontSize: 13, color: C.faint }}>
-          {filteredHalls.length} hall{filteredHalls.length !== 1 ? "s" : ""} found
-        </p>
-        {(search || capacityFilter !== "all" || statusFilter !== "all") && (
-          <button
-            onClick={() => { setSearch(""); setCapacityFilter("all"); setStatusFilter("all"); }}
-            style={{ border: `1px solid ${C.border}`, background: "#fff", color: C.sub, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontSize: 12.5, fontWeight: 600 }}
-          >
-            Clear filters
-          </button>
         )}
-      </div>
 
-      {/* Grid / empty state */}
-      {filteredHalls.length === 0 ? (
-        <div style={{
-          background: "#fff", borderRadius: 18, border: `1px solid ${C.border}`,
-          padding: "4rem 2rem", textAlign: "center",
-        }}>
-          <div style={{ fontSize: 46, marginBottom: 14 }}>🏛</div>
-          <h2 style={{ margin: 0, color: C.text, fontSize: 18 }}>No halls match your filters</h2>
-          <p style={{ marginTop: 8, color: C.sub, fontSize: 14 }}>
-            Try broadening your search or resetting the status and capacity filters.
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 20 }}>
-          {filteredHalls.map((hall) => (
-            <HallCard
-              key={hall._id}
-              hall={hall}
-              onView={setSelectedHall}
-              onBook={handleBookHall}
-            />
-          ))}
-        </div>
-      )}
+      </div>
 
       {/* Modal */}
       {selectedHall && (
