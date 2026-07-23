@@ -215,7 +215,7 @@ export default function FacultyDashboard() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em" }}>
+          <h1 style={{ margin: 0, fontSize: 36, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.03em" }}>
             Welcome, {user?.name || "Faculty"}
           </h1>
           <p style={{ margin: "4px 0 0", fontSize: 14, color: "#64748b" }}>
