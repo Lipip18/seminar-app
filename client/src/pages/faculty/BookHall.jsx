@@ -1,36 +1,28 @@
 import {
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
 
 import {
-    useNavigate,
-    useParams,
+  useNavigate,
+  useParams,
 } from "react-router-dom";
 
 import {
-    ChevronLeft,
-    ChevronRight,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 import { toast } from "sonner";
 
 import { AuthContext } from "../../context/AuthContext";
 
-const timeSlots = [
-  "09:00 - 10:00",
-  "10:00 - 11:00",
-  "11:00 - 12:00",
-  "12:00 - 13:00",
-  "13:00 - 14:00",
-  "14:00 - 15:00",
-  "15:00 - 16:00",
-  "16:00 - 17:00",
-  "17:00 - 18:00",
-  "18:00 - 19:00",
-];
+const parseTimeToMinutes = (value) => {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+};
 
 const getInitials = (name = "") =>
   name
@@ -41,9 +33,10 @@ const getInitials = (name = "") =>
     .toUpperCase();
 
 const formatDate = (date) => {
-  return new Date(date)
-    .toISOString()
-    .split("T")[0];
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
 };
 
 const getHallLocation = (hall) => {
@@ -106,7 +99,10 @@ const BookHall = () => {
   const [selectedDate, setSelectedDate] =
     useState("");
 
-  const [selectedSlot, setSelectedSlot] =
+ const [startTime, setStartTime] =
+    useState("");
+
+  const [endTime, setEndTime] =
     useState("");
 
   const [purpose, setPurpose] =
@@ -134,13 +130,15 @@ const BookHall = () => {
       const hallsData =
         res.data?.data || [];
 
-      // ✅ FIX 2: Only show active halls in the dropdown
-      // Handle boolean true, number 1, or string "true" from API
+      // ✅ FIX: Only show halls that are BOTH active AND marked "Available".
+      // Admins can flip either `isActive` or `status` independently, so both
+      // must be checked or a hall disabled via one field still slips through.
       const activeHalls = hallsData.filter(
         (hall) =>
           hall.isActive !== false &&
           hall.isActive !== 0 &&
-          hall.isActive !== "false"
+          hall.isActive !== "false" &&
+          hall.status !== "Unavailable"
       );
 
       setHalls(activeHalls);
@@ -166,7 +164,8 @@ const BookHall = () => {
       setSelectedHall(null);
       setBookings([]);
       setSelectedDate("");
-      setSelectedSlot("");
+      setStartTime("");
+      setEndTime("");
       setPurpose("");
       return;
     }
@@ -183,9 +182,20 @@ const BookHall = () => {
             `/halls/${selectedHallId}`
           );
 
-        setSelectedHall(
-          res.data.data
-        );
+        const hall = res.data.data;
+
+        // ✅ FIX: block direct-URL access to an unavailable hall
+        if (
+          hall &&
+          (hall.isActive === false || hall.status === "Unavailable")
+        ) {
+          toast.error("This hall is currently unavailable for booking");
+          setSelectedHallId("");
+          setSelectedHall(null);
+          return;
+        }
+
+        setSelectedHall(hall);
       } catch (err) {
         console.error(err);
       }
@@ -292,60 +302,58 @@ const BookHall = () => {
       );
     };
 
-  /* ───────────────── BOOKED SLOTS ───────────────── */
+/* ───────────────── EXISTING BOOKINGS FOR SELECTED DATE ───────────────── */
 
-  const bookedSlots =
-    useMemo(() => {
-      return bookings
-        .filter(
-          (booking) =>
-            formatDate(
-              booking.date
-            ) ===
-            selectedDate
-        )
-        .map(
-          (booking) =>
-            `${booking.startTime} - ${booking.endTime}`
-        );
-    }, [
-      bookings,
-      selectedDate,
-    ]);
+  const bookingsForSelectedDate = useMemo(() => {
+    return bookings
+      .filter((booking) => formatDate(booking.date) === selectedDate)
+      .sort((a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime));
+  }, [bookings, selectedDate]);
 
-  /* ───────────────── FIX 3: FILTER PAST TIME SLOTS FOR TODAY ───────────────── */
+  /* ───────────────── CUSTOM TIME RANGE VALIDATION ───────────────── */
 
-  const availableTimeSlots = useMemo(() => {
-    // Compute a FRESH Date() inside the memo so it's never stale.
-    // The outer `today` is fixed at component mount and gives wrong
-    // results if the user keeps the page open past an hour boundary.
-    const now = new Date();
-    const todayStr = formatDate(now);
+  const timeRangeError = useMemo(() => {
+    if (!startTime || !endTime) return "";
 
-    // If selected date is not today, all slots are potentially available
-    if (selectedDate !== todayStr) {
-      return timeSlots;
+    const startMinutes = parseTimeToMinutes(startTime);
+    const endMinutes = parseTimeToMinutes(endTime);
+
+    if (startMinutes >= endMinutes) {
+      return "Start time must be earlier than end time";
     }
 
-    const nowHour = now.getHours();      // 0-23
-    const nowMinutes = now.getMinutes(); // 0-59
+    // Block past times if the selected date is today
+    const now = new Date();
+    if (selectedDate === formatDate(now)) {
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (startMinutes < nowMinutes) {
+        return "Start time cannot be in the past";
+      }
+    }
 
-    return timeSlots.filter((slot) => {
-      // slot format: "09:00 - 10:00" -> slotStartHour = 9
-      const slotStartHour = parseInt(slot.split(":")[0], 10);
-      // Exactly on the hour (e.g. 17:00): the 17-18 slot is still valid
-      if (nowMinutes === 0) return slotStartHour >= nowHour;
-      // Otherwise (e.g. 17:15): only 18:00+ slots are available
-      return slotStartHour > nowHour;
+    // Warn about overlap with this faculty member's own existing bookings
+    // (the server still enforces this authoritatively against ALL bookings)
+    const overlaps = bookingsForSelectedDate.some((booking) => {
+      const existingStart = parseTimeToMinutes(booking.startTime);
+      const existingEnd = parseTimeToMinutes(booking.endTime);
+      return startMinutes < existingEnd && endMinutes > existingStart;
     });
-  }, [selectedDate]); // fresh Date() computed inside, no stale reference
+
+    if (overlaps) {
+      return "This time range overlaps with an existing booking";
+    }
+
+    return "";
+  }, [startTime, endTime, selectedDate, bookingsForSelectedDate]);
 
   /* ───────────────── FORM VALIDATION ───────────────── */
 
   const isFormValid =
     !!selectedHallId &&
     !!selectedDate &&
-    !!selectedSlot &&
+    !!startTime &&
+    !!endTime &&
+    !timeRangeError &&
     purpose.trim().length > 0;
 
   /* ───────────────── BOOK HALL ───────────────── */
@@ -359,16 +367,8 @@ const BookHall = () => {
         return;
       }
 
-      try {
+      try{
         setSubmitting(true);
-
-        const [
-          startTime,
-          endTime,
-        ] =
-          selectedSlot.split(
-            " - "
-          );
 
         await api.post(
           "/bookings",
@@ -378,7 +378,7 @@ const BookHall = () => {
             startTime,
             endTime,
             purpose: purpose.trim(),
-            role: user?.role, // ✅ Now works because user is properly destructured above
+            role: user?.role,
           }
         );
 
@@ -386,11 +386,13 @@ const BookHall = () => {
           "Booking request submitted"
         );
 
-        setSelectedSlot("");
+        setStartTime("");
+        setEndTime("");
         setPurpose("");
 
         fetchBookings();
-      } catch (err) {
+      } 
+      catch (err) {
         console.error(err);
 
         console.log(err.response?.data);
@@ -590,7 +592,7 @@ const BookHall = () => {
                 </span>
 
                 <span className="text-sm font-medium text-slate-700 text-right">
-                  {selectedSlot || "—"}
+                  {startTime && endTime ? `${startTime} - ${endTime}` : "—"}
                 </span>
               </div>
             </div>
@@ -778,10 +780,12 @@ const BookHall = () => {
 
           {/* TIME SLOTS */}
 
+          {/* CUSTOM TIME RANGE */}
+
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-xl font-semibold text-slate-800">
-                Available Time Slots
+                Select Time Range
               </h2>
 
               {selectedDate && (
@@ -792,55 +796,61 @@ const BookHall = () => {
             </div>
 
             {!selectedDate ? (
-              <div className="h-32 flex items-center justify-center text-slate-400 text-center px-4">
-                Select a date to view available slots.
-              </div>
-            ) : availableTimeSlots.length === 0 ? (
-              <div className="h-32 flex items-center justify-center text-slate-400 text-center px-4">
-                No available slots remain for this date.
+              <div className="h-24 flex items-center justify-center text-slate-400 text-center px-4">
+                Select a date to choose a time range.
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-                {/* ✅ FIX 3: Use availableTimeSlots instead of timeSlots */}
-                {availableTimeSlots.map(
-                  (slot) => {
-                    const isBooked =
-                      bookedSlots.includes(
-                        slot
-                      );
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                      Start time
+                    </label>
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full h-12 rounded-xl border border-slate-300 px-4 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-                    const isSelected =
-                      selectedSlot ===
-                      slot;
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                      End time
+                    </label>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full h-12 rounded-xl border border-slate-300 px-4 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
 
-                    return (
-                      <button
-                        key={slot}
-                        disabled={
-                          isBooked
-                        }
-                        onClick={() =>
-                          setSelectedSlot(
-                            slot
-                          )
-                        }
-                        className={`h-14 rounded-xl border text-sm font-medium transition
-                        
-                        ${
-                          isBooked
-                            ? "bg-red-50 border-red-200 text-red-400 cursor-not-allowed"
-                            : isSelected
-                            ? "bg-blue-600 border-blue-600 text-white"
-                            : "bg-white border-slate-300 hover:bg-blue-50 hover:border-blue-400"
-                        }
-                        `}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  }
+                {timeRangeError && (
+                  <p className="mt-3 text-sm font-medium text-red-500">
+                    {timeRangeError}
+                  </p>
                 )}
-              </div>
+
+                {bookingsForSelectedDate.length > 0 && (
+                  <div className="mt-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                      Already booked on this date
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {bookingsForSelectedDate.map((b) => (
+                        <span
+                          key={b._id}
+                          className="px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-500 text-xs font-medium"
+                        >
+                          {b.startTime} - {b.endTime}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

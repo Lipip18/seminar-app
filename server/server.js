@@ -33,6 +33,7 @@ const hallRoutes = require('./routes/hallRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const userRoutes = require('./routes/userRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const connectionRoutes = require('./routes/connectionRoutes');
 
 // Mount routers
 app.use('/api/auth', authRoutes);
@@ -40,6 +41,7 @@ app.use('/api/halls', hallRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/connections', connectionRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

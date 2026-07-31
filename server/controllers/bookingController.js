@@ -205,10 +205,13 @@ exports.addBooking = async (req, res) => {
     // ==============================
     // CHECK HALL ACTIVE
     // ==============================
-    if (hall.isActive === false) {
+    // ==============================
+    // CHECK HALL ACTIVE / AVAILABLE
+    // ==============================
+    if (hall.isActive === false || hall.status === "Unavailable") {
       return res.status(400).json({
         success: false,
-        message: "Hall is disabled by admin",
+        message: "This hall is currently unavailable for booking",
       });
     }
 
